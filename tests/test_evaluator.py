@@ -493,13 +493,39 @@ class TestEvaluateEssay:
     @patch("src.evaluator.call_anthropic")
     @patch("src.evaluator.call_openai")
     @patch("src.evaluator.call_gemini")
-    def test_picks_highest_score_response(
+    def test_returns_all_model_results(
         self,
         mock_gemini: MagicMock,
         mock_openai: MagicMock,
         mock_anthropic: MagicMock,
     ) -> None:
-        """합산 점수가 가장 높은 응답을 채택한다."""
+        """3개 모델 응답이 by_model에 모두 포함된다."""
+        gemini_d = {"scores": [{"번호": 1, "점수": 5}], "feedback": "G"}
+        openai_d = {"scores": [{"번호": 1, "점수": 7}], "feedback": "O"}
+        anthro_d = {"scores": [{"번호": 1, "점수": 6}], "feedback": "A"}
+
+        mock_gemini.return_value = json.dumps(gemini_d, ensure_ascii=False)
+        mock_openai.return_value = json.dumps(openai_d, ensure_ascii=False)
+        mock_anthropic.return_value = json.dumps(anthro_d, ensure_ascii=False)
+
+        result = evaluate_essay(SAMPLE_ESSAY, SAMPLE_RUBRIC)
+
+        assert result is not None
+        assert "by_model" in result
+        assert result["by_model"]["gemini"] == gemini_d
+        assert result["by_model"]["openai"] == openai_d
+        assert result["by_model"]["anthropic"] == anthro_d
+
+    @patch("src.evaluator.call_anthropic")
+    @patch("src.evaluator.call_openai")
+    @patch("src.evaluator.call_gemini")
+    def test_best_is_highest_score(
+        self,
+        mock_gemini: MagicMock,
+        mock_openai: MagicMock,
+        mock_anthropic: MagicMock,
+    ) -> None:
+        """best가 합산 점수가 가장 높은 응답이다."""
         low = {"scores": [{"번호": 1, "점수": 5}], "feedback": "낮음"}
         mid = {"scores": [{"번호": 1, "점수": 7}], "feedback": "중간"}
         high = {"scores": [{"번호": 1, "점수": 10}], "feedback": "높음"}
@@ -511,18 +537,19 @@ class TestEvaluateEssay:
         result = evaluate_essay(SAMPLE_ESSAY, SAMPLE_RUBRIC)
 
         assert result is not None
-        assert result["feedback"] == "높음"
+        assert result["best"]["feedback"] == "높음"
+        assert result["best"]["scores"] == high["scores"]
 
     @patch("src.evaluator.call_anthropic")
     @patch("src.evaluator.call_openai")
     @patch("src.evaluator.call_gemini")
-    def test_handles_one_llm_failure(
+    def test_failed_model_is_none_in_by_model(
         self,
         mock_gemini: MagicMock,
         mock_openai: MagicMock,
         mock_anthropic: MagicMock,
     ) -> None:
-        """하나의 LLM이 실패해도 나머지로 평가를 수행한다."""
+        """실패 모델은 by_model에 None으로 기록된다."""
         mock_gemini.side_effect = Exception("Gemini 에러")
         valid = {"scores": [{"번호": 1, "점수": 8}], "feedback": "유효"}
         mock_openai.return_value = json.dumps(valid, ensure_ascii=False)
@@ -531,32 +558,36 @@ class TestEvaluateEssay:
         result = evaluate_essay(SAMPLE_ESSAY, SAMPLE_RUBRIC)
 
         assert result is not None
-        assert result["feedback"] == "유효"
+        assert result["by_model"]["gemini"] is None
+        assert result["by_model"]["openai"] is not None
+        assert result["by_model"]["anthropic"] is not None
 
     @patch("src.evaluator.call_anthropic")
     @patch("src.evaluator.call_openai")
     @patch("src.evaluator.call_gemini")
-    def test_handles_two_llm_failures(
+    def test_invalid_response_is_none_in_by_model(
         self,
         mock_gemini: MagicMock,
         mock_openai: MagicMock,
         mock_anthropic: MagicMock,
     ) -> None:
-        """두 개의 LLM이 실패해도 나머지 하나로 평가를 수행한다."""
-        mock_gemini.side_effect = Exception("Gemini 에러")
-        mock_openai.side_effect = Exception("OpenAI 에러")
-        valid = {"scores": [{"번호": 1, "점수": 9}], "feedback": "하나만 성공"}
-        mock_anthropic.return_value = json.dumps(valid, ensure_ascii=False)
+        """파싱 실패 모델도 by_model에 None으로 기록된다."""
+        mock_gemini.return_value = "invalid json"
+        valid = {"scores": [{"번호": 1, "점수": 8}], "feedback": "유효"}
+        mock_openai.return_value = json.dumps(valid, ensure_ascii=False)
+        mock_anthropic.return_value = "{bad"
 
         result = evaluate_essay(SAMPLE_ESSAY, SAMPLE_RUBRIC)
 
         assert result is not None
-        assert result["feedback"] == "하나만 성공"
+        assert result["by_model"]["gemini"] is None
+        assert result["by_model"]["openai"] == valid
+        assert result["by_model"]["anthropic"] is None
 
     @patch("src.evaluator.call_anthropic")
     @patch("src.evaluator.call_openai")
     @patch("src.evaluator.call_gemini")
-    def test_all_llm_failures_returns_none(
+    def test_all_fail_returns_none(
         self,
         mock_gemini: MagicMock,
         mock_openai: MagicMock,
@@ -566,24 +597,6 @@ class TestEvaluateEssay:
         mock_gemini.side_effect = Exception("Gemini 에러")
         mock_openai.side_effect = Exception("OpenAI 에러")
         mock_anthropic.side_effect = Exception("Anthropic 에러")
-
-        result = evaluate_essay(SAMPLE_ESSAY, SAMPLE_RUBRIC)
-
-        assert result is None
-
-    @patch("src.evaluator.call_anthropic")
-    @patch("src.evaluator.call_openai")
-    @patch("src.evaluator.call_gemini")
-    def test_invalid_responses_returns_none(
-        self,
-        mock_gemini: MagicMock,
-        mock_openai: MagicMock,
-        mock_anthropic: MagicMock,
-    ) -> None:
-        """모든 LLM이 유효하지 않은 응답을 반환하면 None을 반환한다."""
-        mock_gemini.return_value = "invalid json"
-        mock_openai.return_value = "not json either"
-        mock_anthropic.return_value = "{bad"
 
         result = evaluate_essay(SAMPLE_ESSAY, SAMPLE_RUBRIC)
 
@@ -611,44 +624,3 @@ class TestEvaluateEssay:
         mock_gemini.assert_called_once_with(expected_prompt)
         mock_openai.assert_called_once_with(expected_prompt)
         mock_anthropic.assert_called_once_with(expected_prompt)
-
-    @patch("src.evaluator.call_anthropic")
-    @patch("src.evaluator.call_openai")
-    @patch("src.evaluator.call_gemini")
-    def test_mixed_valid_and_invalid(
-        self,
-        mock_gemini: MagicMock,
-        mock_openai: MagicMock,
-        mock_anthropic: MagicMock,
-    ) -> None:
-        """유효한 응답과 유효하지 않은 응답이 혼재할 때 유효한 응답을 채택한다."""
-        mock_gemini.return_value = "invalid"
-        valid = {"scores": [{"번호": 1, "점수": 6}], "feedback": "유효한 응답"}
-        mock_openai.return_value = json.dumps(valid, ensure_ascii=False)
-        mock_anthropic.side_effect = Exception("에러")
-
-        result = evaluate_essay(SAMPLE_ESSAY, SAMPLE_RUBRIC)
-
-        assert result is not None
-        assert result["feedback"] == "유효한 응답"
-
-    @patch("src.evaluator.call_anthropic")
-    @patch("src.evaluator.call_openai")
-    @patch("src.evaluator.call_gemini")
-    def test_same_scores_picks_first_encountered(
-        self,
-        mock_gemini: MagicMock,
-        mock_openai: MagicMock,
-        mock_anthropic: MagicMock,
-    ) -> None:
-        """동점일 경우에도 결과를 반환한다."""
-        same = {"scores": [{"번호": 1, "점수": 8}], "feedback": "동점"}
-        response_json = json.dumps(same, ensure_ascii=False)
-        mock_gemini.return_value = response_json
-        mock_openai.return_value = response_json
-        mock_anthropic.return_value = response_json
-
-        result = evaluate_essay(SAMPLE_ESSAY, SAMPLE_RUBRIC)
-
-        assert result is not None
-        assert result["feedback"] == "동점"

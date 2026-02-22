@@ -140,25 +140,31 @@ def _collect_responses(prompt: str) -> list[tuple[str, Optional[str]]]:
 def evaluate_essay(
     essay_text: str, rubric_text: str
 ) -> Optional[dict]:
-    """에세이를 3개 LLM으로 평가하고 최고점 응답을 반환한다.
+    """에세이를 3개 LLM으로 평가하고 모델별 결과를 반환한다.
 
-    모든 LLM이 실패하거나 유효한 응답이 없으면 None을 반환한다.
+    Returns:
+        {"best": 최고점_dict, "by_model": {모델명: dict|None}} 또는 None.
     """
     prompt = build_evaluation_prompt(rubric_text, essay_text)
     responses = _collect_responses(prompt)
 
+    by_model: dict[str, Optional[dict]] = {}
     best: Optional[dict] = None
     best_score = -1.0
 
-    for _name, raw_text in responses:
+    for name, raw_text in responses:
         if raw_text is None:
+            by_model[name] = None
             continue
         parsed = parse_evaluation_response(raw_text)
-        if parsed is None:
-            continue
-        total = sum_scores(parsed)
-        if total > best_score:
-            best_score = total
-            best = parsed
+        by_model[name] = parsed
+        if parsed is not None:
+            total = sum_scores(parsed)
+            if total > best_score:
+                best_score = total
+                best = parsed
 
-    return best
+    if best is None:
+        return None
+
+    return {"best": best, "by_model": by_model}
