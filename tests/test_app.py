@@ -162,8 +162,12 @@ class TestRunGrading:
         from app import run_grading
 
         eval_result = {
-            "scores": [{"번호": 1, "점수": 10}],
-            "feedback": "잘 작성했습니다.",
+            "best": {"scores": [{"번호": 1, "점수": 10}], "feedback": "잘 작성했습니다."},
+            "by_model": {
+                "gemini": {"scores": [{"번호": 1, "점수": 8}], "feedback": "좋음"},
+                "openai": {"scores": [{"번호": 1, "점수": 10}], "feedback": "잘 작성했습니다."},
+                "anthropic": {"scores": [{"번호": 1, "점수": 9}], "feedback": "우수"},
+            },
         }
         mock_eval.evaluate_essay.return_value = eval_result
         mock_report.build_report.return_value = b"fake_xlsx_data"
@@ -188,8 +192,12 @@ class TestRunGrading:
         from app import run_grading
 
         eval_result = {
-            "scores": [{"번호": 1, "점수": 8}],
-            "feedback": "좋습니다.",
+            "best": {"scores": [{"번호": 1, "점수": 8}], "feedback": "좋습니다."},
+            "by_model": {
+                "gemini": {"scores": [{"번호": 1, "점수": 8}], "feedback": "좋습니다."},
+                "openai": {"scores": [{"번호": 1, "점수": 8}], "feedback": "좋습니다."},
+                "anthropic": {"scores": [{"번호": 1, "점수": 8}], "feedback": "좋습니다."},
+            },
         }
         mock_eval.evaluate_essay.return_value = eval_result
         mock_report.build_report.return_value = b"xlsx"
@@ -211,8 +219,12 @@ class TestRunGrading:
         from app import run_grading
 
         eval_result = {
-            "scores": [{"번호": 1, "점수": 10}],
-            "feedback": "좋음",
+            "best": {"scores": [{"번호": 1, "점수": 10}], "feedback": "좋음"},
+            "by_model": {
+                "gemini": {"scores": [{"번호": 1, "점수": 10}], "feedback": "좋음"},
+                "openai": {"scores": [{"번호": 1, "점수": 10}], "feedback": "좋음"},
+                "anthropic": {"scores": [{"번호": 1, "점수": 10}], "feedback": "좋음"},
+            },
         }
         mock_eval.evaluate_essay.side_effect = [
             eval_result,
@@ -261,7 +273,13 @@ class TestRunGrading:
         from app import run_grading
 
         mock_eval.evaluate_essay.side_effect = [
-            {"scores": [{"번호": 1, "점수": 5}], "feedback": "OK"},
+            {
+                "best": {"scores": [{"번호": 1, "점수": 5}], "feedback": "OK"},
+                "by_model": {
+                    "gemini": {"scores": [{"번호": 1, "점수": 5}], "feedback": "OK"},
+                    "openai": None, "anthropic": None,
+                },
+            },
             None,
         ]
         mock_report.build_report.return_value = b"partial"
@@ -286,8 +304,12 @@ class TestRunGrading:
         from app import run_grading
 
         eval_result = {
-            "scores": [{"번호": 1, "점수": 10}],
-            "feedback": "피드백",
+            "best": {"scores": [{"번호": 1, "점수": 10}], "feedback": "피드백"},
+            "by_model": {
+                "gemini": {"scores": [{"번호": 1, "점수": 10}], "feedback": "피드백"},
+                "openai": {"scores": [{"번호": 1, "점수": 10}], "feedback": "피드백"},
+                "anthropic": {"scores": [{"번호": 1, "점수": 10}], "feedback": "피드백"},
+            },
         }
         mock_eval.evaluate_essay.return_value = eval_result
         mock_report.build_report.return_value = b"xlsx"
@@ -324,8 +346,12 @@ class TestRunGrading:
         from app import run_grading
 
         eval_result = {
-            "scores": [{"번호": 1, "점수": 10}],
-            "feedback": "좋음",
+            "best": {"scores": [{"번호": 1, "점수": 10}], "feedback": "좋음"},
+            "by_model": {
+                "gemini": {"scores": [{"번호": 1, "점수": 10}], "feedback": "좋음"},
+                "openai": {"scores": [{"번호": 1, "점수": 10}], "feedback": "좋음"},
+                "anthropic": {"scores": [{"번호": 1, "점수": 10}], "feedback": "좋음"},
+            },
         }
         mock_eval.evaluate_essay.side_effect = [
             eval_result,
