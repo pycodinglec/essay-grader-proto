@@ -10,6 +10,26 @@ from src import auth, config, essay_splitter, evaluator, file_handler, ocr, repo
 
 st.set_page_config(page_title="에세이 자동 채점", layout="wide")
 
+SPLITTER_PROMPT_DESCRIPTION = (
+    "다음은 에세이 분할에 사용되는 프롬프트의 구조입니다.\n\n"
+    "prompt injection 방어 문구 + 페이지별 OCR 결과(학번/이름/텍스트 100자) "
+    "+ JSON 배열 응답 요청"
+)
+
+
+def show_prompts_section() -> None:
+    """사용 중인 LLM 프롬프트를 expander로 표시한다."""
+    with st.expander("사용 중인 프롬프트 확인"):
+        st.subheader("OCR 프롬프트")
+        st.code(ocr.OCR_PROMPT, language=None)
+        st.subheader("에세이 분할 프롬프트")
+        st.text(SPLITTER_PROMPT_DESCRIPTION)
+        st.code(essay_splitter.build_splitter_prompt([
+            {"학번": "10305", "이름": "홍길동", "에세이텍스트": "(예시)"}
+        ]), language=None)
+        st.subheader("채점 프롬프트")
+        st.code(evaluator.EVALUATION_PROMPT_TEMPLATE, language=None)
+
 
 def init_session_state() -> None:
     """세션 상태 키를 기본값으로 초기화한다."""
@@ -320,6 +340,8 @@ def main() -> None:
         return
 
     st.title("에세이 자동 채점 시스템")
+
+    show_prompts_section()
 
     show_upload_section()
 

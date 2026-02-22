@@ -424,3 +424,25 @@ class TestBuildErrorMessage:
         assert "작업을 지속할 수 없습니다" in msg
         assert "다운로드" in msg
         assert "페이지를 새로 고치면 작업이 소실됩니다" in msg
+
+
+# ---------------------------------------------------------------------------
+# show_prompts_section 테스트
+# ---------------------------------------------------------------------------
+
+
+class TestShowPromptsSection:
+    """프롬프트 공개 섹션 테스트."""
+
+    def test_function_exists(self):
+        """show_prompts_section 함수가 존재한다."""
+        from app import show_prompts_section
+
+        assert callable(show_prompts_section)
+
+    def test_splitter_prompt_description_exists(self):
+        """SPLITTER_PROMPT_DESCRIPTION 상수가 존재한다."""
+        from app import SPLITTER_PROMPT_DESCRIPTION
+
+        assert isinstance(SPLITTER_PROMPT_DESCRIPTION, str)
+        assert len(SPLITTER_PROMPT_DESCRIPTION) > 0
