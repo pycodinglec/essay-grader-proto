@@ -42,7 +42,7 @@ Streamlit 웹 애플리케이션 진입점. 서논술형 에세이 자동 채점
 - `format_progress_message(total, current)` -- "n개의 제출물 중 k번째 문서를 채점중..." 형식 메시지 생성
 - `build_error_message(k)` -- 채점 에러 시 한국어 안내 메시지 생성
 - `run_ocr_and_identify(files_data)` -- 파일 목록 OCR 수행 후 `essay_splitter.split_essays`로 에세이 분리, `submission.build_submissions` 호출, (submissions, unidentified) 반환
-- `run_grading(submissions, rubric_text)` -- 제출물별 3-LLM 평가, 에러 시 부분 결과 보존, (graded, report_bytes, error_msg) 반환
+- `run_grading(submissions, rubric_text, on_progress=None)` -- 제출물별 3-LLM 평가, `on_progress(current, total)` 콜백으로 진행률 알림, 에러 시 부분 결과 보존, (graded, report_bytes, error_msg) 반환
 
 ### UI 렌더링 (Streamlit 의존)
 
@@ -55,9 +55,16 @@ Streamlit 웹 애플리케이션 진입점. 서논술형 에세이 자동 채점
 - `show_rubric_section()` -- 채점기준표 업로드 및 검증 UI
 - `_validate_and_parse_rubric(rubric_file)` -- 채점기준표 검증/파싱 헬퍼
 - `show_grading_section()` -- 채점 시작 버튼 및 진행률 UI
-- `_execute_grading()` -- 채점 실행 및 진행률 표시
+- `_execute_grading()` -- `run_grading`을 `on_progress` 콜백과 함께 호출하여 채점 실행 및 진행률 표시. 채점 로직을 자체 구현하지 않고 `run_grading`에 위임.
 - `show_download_section(report_bytes, error_msg)` -- 리포트 다운로드 버튼 표시
 - `main()` -- 앱 진입점, 세션 초기화 및 전체 흐름 제어
+
+## 진행률 표시
+
+- `_execute_grading`은 `run_grading`에 `on_progress` 콜백을 전달한다.
+- 콜백은 각 에세이 채점 **시작 전**에 호출된다: `on_progress(current, total)`
+- 진행률 바: `progress_bar.progress((current - 1) / total)` — 완료된 분량만 반영
+- 모두 성공 시에만 `progress_bar.progress(1.0)` + "채점이 완료되었습니다!"
 
 ## UI 흐름
 
@@ -77,7 +84,7 @@ Streamlit 웹 애플리케이션 진입점. 서논술형 에세이 자동 채점
 
 ## 의존 모듈
 
-`src.auth`, `src.config`, `src.essay_splitter`, `src.evaluator`, `src.file_handler`, `src.ocr`, `src.report`, `src.rubric`, `src.submission`
+`collections.abc`, `src.auth`, `src.config`, `src.essay_splitter`, `src.evaluator`, `src.file_handler`, `src.ocr`, `src.report`, `src.rubric`, `src.submission`
 
 ## 파이프라인 변경 사항
 

@@ -132,13 +132,13 @@ class TestParseBoundaryResponse:
 class TestCallSplitterLlm:
     """call_splitter_llm 함수 테스트."""
 
-    @patch("src.essay_splitter.genai")
+    @patch("src.essay_splitter.config.get_genai_client")
     def test_calls_gemini_with_correct_model(
-        self, mock_genai: MagicMock
+        self, mock_get_client: MagicMock
     ) -> None:
         """gemini-3.1-pro-preview 모델을 사용하여 호출한다."""
         mock_client = MagicMock()
-        mock_genai.Client.return_value = mock_client
+        mock_get_client.return_value = mock_client
         mock_response = MagicMock()
         mock_response.text = "[[0,1]]"
         mock_client.models.generate_content.return_value = mock_response
@@ -148,11 +148,11 @@ class TestCallSplitterLlm:
         call_kwargs = mock_client.models.generate_content.call_args
         assert call_kwargs.kwargs["model"] == "gemini-3.1-pro-preview"
 
-    @patch("src.essay_splitter.genai")
-    def test_sends_prompt_as_contents(self, mock_genai: MagicMock) -> None:
+    @patch("src.essay_splitter.config.get_genai_client")
+    def test_sends_prompt_as_contents(self, mock_get_client: MagicMock) -> None:
         """프롬프트를 contents 파라미터로 전달한다."""
         mock_client = MagicMock()
-        mock_genai.Client.return_value = mock_client
+        mock_get_client.return_value = mock_client
         mock_response = MagicMock()
         mock_response.text = "[[0]]"
         mock_client.models.generate_content.return_value = mock_response
@@ -162,11 +162,11 @@ class TestCallSplitterLlm:
         call_kwargs = mock_client.models.generate_content.call_args
         assert call_kwargs.kwargs["contents"] == "my prompt"
 
-    @patch("src.essay_splitter.genai")
-    def test_returns_response_text(self, mock_genai: MagicMock) -> None:
+    @patch("src.essay_splitter.config.get_genai_client")
+    def test_returns_response_text(self, mock_get_client: MagicMock) -> None:
         """API 응답의 텍스트를 반환한다."""
         mock_client = MagicMock()
-        mock_genai.Client.return_value = mock_client
+        mock_get_client.return_value = mock_client
         mock_response = MagicMock()
         mock_response.text = "[[0,1],[2]]"
         mock_client.models.generate_content.return_value = mock_response

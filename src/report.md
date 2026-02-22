@@ -39,6 +39,10 @@
 - 입력: `{"학번", "이름", "에세이텍스트", "평가결과"}` dict 리스트
 - 반환: 다운로드 가능한 xlsx 바이트
 
+## 타입 표기
+- `from __future__ import annotations` 사용
+- `dict | None` 유니온 형태 사용 (`Optional` 미사용)
+
 ## 의존성
 - `openpyxl`: xlsx 파일 생성
 - `collections.defaultdict`: 학생별 작품번호 카운터

@@ -1,6 +1,7 @@
 """패스워드 인증 모듈."""
 
 import hashlib
+import hmac
 
 
 def hash_password(password: str) -> str:
@@ -27,4 +28,4 @@ def verify_password(password: str, stored_hash: str) -> bool:
     """
     if not stored_hash:
         return False
-    return hash_password(password) == stored_hash
+    return hmac.compare_digest(hash_password(password), stored_hash)

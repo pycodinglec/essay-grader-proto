@@ -11,6 +11,47 @@ from openpyxl import load_workbook
 _EXPECTED_HEADERS = ["번호", "채점기준", "배점"]
 
 
+def _read_and_validate(
+    file_bytes: bytes,
+) -> tuple[bool, str, list[tuple]]:
+    """xlsx 바이트를 1회 읽어 검증하고 행 데이터를 반환한다.
+
+    Returns:
+        (유효여부, 에러메시지, 데이터행_리스트) 튜플.
+        유효하지 않으면 데이터행은 빈 리스트.
+    """
+    try:
+        wb = load_workbook(filename=BytesIO(file_bytes), read_only=True)
+    except Exception:
+        return False, "유효한 xlsx 파일이 아닙니다.", []
+
+    ws = wb.active
+    rows = list(ws.iter_rows(values_only=True))
+    wb.close()
+
+    if not rows:
+        return False, "파일에 데이터가 없습니다.", []
+
+    headers = [str(cell).strip() if cell is not None else "" for cell in rows[0]]
+
+    if headers != _EXPECTED_HEADERS:
+        return False, (
+            f"헤더가 올바르지 않습니다. "
+            f"필요: {_EXPECTED_HEADERS}, 실제: {headers}"
+        ), []
+
+    data_rows = rows[1:]
+    if not data_rows:
+        return False, "데이터 행이 최소 1개 이상 필요합니다.", []
+
+    for i, row in enumerate(data_rows, start=2):
+        score = row[2] if len(row) > 2 else None
+        if not isinstance(score, (int, float)):
+            return False, f"{i}행의 배점 값이 숫자가 아닙니다: {score}", []
+
+    return True, "", data_rows
+
+
 def validate_rubric(file_bytes: bytes) -> tuple[bool, str]:
     """xlsx 바이트를 받아 채점기준표 양식을 검증한다.
 
@@ -20,36 +61,8 @@ def validate_rubric(file_bytes: bytes) -> tuple[bool, str]:
     Returns:
         (True, "") 유효한 경우, (False, 에러메시지) 유효하지 않은 경우.
     """
-    try:
-        wb = load_workbook(filename=BytesIO(file_bytes), read_only=True)
-    except Exception:
-        return False, "유효한 xlsx 파일이 아닙니다."
-
-    ws = wb.active
-    rows = list(ws.iter_rows(values_only=True))
-    wb.close()
-
-    if not rows:
-        return False, "파일에 데이터가 없습니다."
-
-    headers = [str(cell).strip() if cell is not None else "" for cell in rows[0]]
-
-    if headers != _EXPECTED_HEADERS:
-        return False, (
-            f"헤더가 올바르지 않습니다. "
-            f"필요: {_EXPECTED_HEADERS}, 실제: {headers}"
-        )
-
-    data_rows = rows[1:]
-    if not data_rows:
-        return False, "데이터 행이 최소 1개 이상 필요합니다."
-
-    for i, row in enumerate(data_rows, start=2):
-        score = row[2] if len(row) > 2 else None
-        if not isinstance(score, (int, float)):
-            return False, f"{i}행의 배점 값이 숫자가 아닙니다: {score}"
-
-    return True, ""
+    ok, msg, _ = _read_and_validate(file_bytes)
+    return ok, msg
 
 
 def parse_rubric(file_bytes: bytes) -> list[dict]:
@@ -64,17 +77,12 @@ def parse_rubric(file_bytes: bytes) -> list[dict]:
     Raises:
         ValueError: 파일이 유효하지 않을 경우.
     """
-    ok, msg = validate_rubric(file_bytes)
+    ok, msg, data_rows = _read_and_validate(file_bytes)
     if not ok:
         raise ValueError(msg)
 
-    wb = load_workbook(filename=BytesIO(file_bytes), read_only=True)
-    ws = wb.active
-    rows = list(ws.iter_rows(values_only=True))
-    wb.close()
-
     result = []
-    for row in rows[1:]:
+    for row in data_rows:
         result.append({
             "번호": row[0],
             "채점기준": str(row[1]),

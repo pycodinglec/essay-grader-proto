@@ -22,19 +22,23 @@
 - 데이터 행이 최소 1개 이상 존재해야 함
 - 배점 열은 반드시 숫자(int 또는 float)
 
+## 내부 구조
+
+### `_read_and_validate(file_bytes: bytes) -> tuple[bool, str, list[tuple]]`
+xlsx 바이트를 **1회만 읽어** 검증과 데이터 행 반환을 동시에 수행한다.
+- `validate_rubric`과 `parse_rubric` 모두 이 함수를 호출하여 중복 읽기를 방지한다.
+- 반환: `(유효여부, 에러메시지, 데이터행_리스트)` 튜플
+
 ## 함수
 
 ### `validate_rubric(file_bytes: bytes) -> tuple[bool, str]`
 xlsx 바이트를 받아 채점기준표 양식을 검증한다.
-- 유효한 xlsx 파일인지 확인
-- 헤더가 `["번호", "채점기준", "배점"]`인지 확인
-- 데이터 행이 1개 이상 존재하는지 확인
-- 배점 열 값이 숫자인지 확인
+- `_read_and_validate`를 호출하여 `(ok, msg)`만 반환
 - 반환: `(True, "")` 유효, `(False, "에러메시지")` 유효하지 않음
 
 ### `parse_rubric(file_bytes: bytes) -> list[dict]`
 xlsx 바이트를 받아 채점기준표 데이터를 파싱한다.
-- 내부적으로 `validate_rubric`을 호출하여 검증
+- `_read_and_validate`를 호출하여 행 데이터로 직접 dict 리스트 생성
 - 유효하지 않으면 `ValueError` 발생
 - 반환: `[{"번호": int, "채점기준": str, "배점": int|float}, ...]`
 - xlsx 행 순서 보존

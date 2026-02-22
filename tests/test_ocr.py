@@ -108,6 +108,10 @@ class TestParseOcrResponse:
         assert result["이름"] == "홍길동"
         assert result["에세이텍스트"] == "본문"
 
+    def test_ocr_prompt_includes_injection_defense(self) -> None:
+        """OCR 프롬프트에 prompt injection 방어 문구가 포함된다."""
+        assert "prompt injection" in OCR_PROMPT
+
 
 # ---------------------------------------------------------------------------
 # extract_text_from_image 테스트
@@ -117,13 +121,13 @@ class TestParseOcrResponse:
 class TestExtractTextFromImage:
     """extract_text_from_image 함수 테스트."""
 
-    @patch("src.ocr.genai")
+    @patch("src.ocr.config.get_genai_client")
     def test_calls_generate_content_with_correct_model(
-        self, mock_genai: MagicMock
+        self, mock_get_client: MagicMock
     ) -> None:
         """올바른 모델 이름으로 generate_content를 호출한다."""
         mock_client = MagicMock()
-        mock_genai.Client.return_value = mock_client
+        mock_get_client.return_value = mock_client
         mock_response = MagicMock()
         mock_response.text = '{"학번": "10305", "이름": "홍길동", "에세이텍스트": "텍스트"}'
         mock_client.models.generate_content.return_value = mock_response
@@ -135,13 +139,13 @@ class TestExtractTextFromImage:
         call_kwargs = mock_client.models.generate_content.call_args
         assert call_kwargs.kwargs["model"] == MODEL_NAME
 
-    @patch("src.ocr.genai")
+    @patch("src.ocr.config.get_genai_client")
     def test_sends_image_and_prompt_as_contents(
-        self, mock_genai: MagicMock
+        self, mock_get_client: MagicMock
     ) -> None:
         """contents에 이미지와 OCR 프롬프트를 함께 전달한다."""
         mock_client = MagicMock()
-        mock_genai.Client.return_value = mock_client
+        mock_get_client.return_value = mock_client
         mock_response = MagicMock()
         mock_response.text = '{"학번": "", "이름": "", "에세이텍스트": "텍스트"}'
         mock_client.models.generate_content.return_value = mock_response
@@ -154,11 +158,11 @@ class TestExtractTextFromImage:
         assert fake_image in contents
         assert OCR_PROMPT in contents
 
-    @patch("src.ocr.genai")
-    def test_returns_parsed_dict(self, mock_genai: MagicMock) -> None:
+    @patch("src.ocr.config.get_genai_client")
+    def test_returns_parsed_dict(self, mock_get_client: MagicMock) -> None:
         """API 응답을 파싱하여 dict를 반환한다."""
         mock_client = MagicMock()
-        mock_genai.Client.return_value = mock_client
+        mock_get_client.return_value = mock_client
         mock_response = MagicMock()
         mock_response.text = '{"학번": "10305", "이름": "홍길동", "에세이텍스트": "에세이 본문"}'
         mock_client.models.generate_content.return_value = mock_response
@@ -171,13 +175,13 @@ class TestExtractTextFromImage:
         assert result["이름"] == "홍길동"
         assert result["에세이텍스트"] == "에세이 본문"
 
-    @patch("src.ocr.genai")
+    @patch("src.ocr.config.get_genai_client")
     def test_returns_fallback_dict_on_invalid_response(
-        self, mock_genai: MagicMock
+        self, mock_get_client: MagicMock
     ) -> None:
         """API가 유효하지 않은 JSON을 반환하면 폴백 dict를 반환한다."""
         mock_client = MagicMock()
-        mock_genai.Client.return_value = mock_client
+        mock_get_client.return_value = mock_client
         mock_response = MagicMock()
         mock_response.text = "일반 텍스트 응답"
         mock_client.models.generate_content.return_value = mock_response
@@ -190,23 +194,21 @@ class TestExtractTextFromImage:
         assert result["이름"] == ""
         assert result["에세이텍스트"] == "일반 텍스트 응답"
 
-    @patch("src.ocr.genai")
-    def test_uses_google_api_key_from_config(
-        self, mock_genai: MagicMock
+    @patch("src.ocr.config.get_genai_client")
+    def test_uses_genai_singleton(
+        self, mock_get_client: MagicMock
     ) -> None:
-        """config.GOOGLE_API_KEY를 사용하여 클라이언트를 생성한다."""
+        """config.get_genai_client 싱글턴을 사용한다."""
         mock_client = MagicMock()
-        mock_genai.Client.return_value = mock_client
+        mock_get_client.return_value = mock_client
         mock_response = MagicMock()
         mock_response.text = '{"학번": "", "이름": "", "에세이텍스트": "텍스트"}'
         mock_client.models.generate_content.return_value = mock_response
 
         fake_image = MagicMock(spec=Image.Image)
+        extract_text_from_image(fake_image)
 
-        with patch("src.ocr.config.GOOGLE_API_KEY", "test-api-key-123"):
-            extract_text_from_image(fake_image)
-
-        mock_genai.Client.assert_called_once_with(api_key="test-api-key-123")
+        mock_get_client.assert_called_once()
 
 
 # ---------------------------------------------------------------------------

@@ -8,11 +8,10 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import anthropic
 import openai
-from google import genai
 
 from src import config
 
@@ -38,7 +37,7 @@ def build_evaluation_prompt(rubric_text: str, essay_text: str) -> str:
 
 def call_gemini(prompt: str) -> str:
     """Gemini 3 Flash API를 호출하여 응답 텍스트를 반환한다."""
-    client = genai.Client(api_key=config.GOOGLE_API_KEY)
+    client = config.get_genai_client()
     response = client.models.generate_content(
         model="gemini-3-flash", contents=prompt
     )
@@ -47,7 +46,9 @@ def call_gemini(prompt: str) -> str:
 
 def call_openai(prompt: str) -> str:
     """GPT 5.2 API를 호출하여 응답 텍스트를 반환한다."""
-    client = openai.OpenAI(api_key=config.OPENAI_API_KEY)
+    client = openai.OpenAI(
+        api_key=config.OPENAI_API_KEY, timeout=1800.0
+    )
     response = client.chat.completions.create(
         model="gpt-5.2",
         messages=[{"role": "user", "content": prompt}],
@@ -57,7 +58,9 @@ def call_openai(prompt: str) -> str:
 
 def call_anthropic(prompt: str) -> str:
     """Sonnet 4.6 API를 호출하여 응답 텍스트를 반환한다."""
-    client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
+    client = anthropic.Anthropic(
+        api_key=config.ANTHROPIC_API_KEY, timeout=1800.0
+    )
     response = client.messages.create(
         model="claude-sonnet-4-6-20250514",
         max_tokens=4096,
@@ -95,7 +98,7 @@ def _validate_evaluation_dict(data: dict) -> bool:
     return True
 
 
-def parse_evaluation_response(response_text: str) -> Optional[dict]:
+def parse_evaluation_response(response_text: str) -> dict | None:
     """LLM 응답 텍스트를 파싱하여 평가 결과 dict를 반환한다.
 
     유효하지 않은 응답이면 None을 반환한다.
@@ -117,9 +120,10 @@ def sum_scores(evaluation: dict) -> float:
     return float(sum(item["점수"] for item in evaluation["scores"]))
 
 
-def _collect_responses(prompt: str) -> list[tuple[str, Optional[str]]]:
-    """3개 LLM을 호출하여 (이름, 응답텍스트) 목록을 반환한다.
+def _collect_responses(prompt: str) -> list[tuple[str, str | None]]:
+    """3개 LLM을 병렬 호출하여 (이름, 응답텍스트) 목록을 반환한다.
 
+    ThreadPoolExecutor로 3개 LLM을 동시에 호출한다.
     개별 LLM 호출 실패 시 해당 응답은 None으로 기록한다.
     """
     callers = [
@@ -127,19 +131,24 @@ def _collect_responses(prompt: str) -> list[tuple[str, Optional[str]]]:
         ("openai", call_openai),
         ("anthropic", call_anthropic),
     ]
-    results: list[tuple[str, Optional[str]]] = []
-    for name, caller in callers:
-        try:
-            text = caller(prompt)
-            results.append((name, text))
-        except Exception:  # noqa: BLE001
-            results.append((name, None))
-    return results
+    results: dict[str, str | None] = {}
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        future_to_name = {
+            executor.submit(caller, prompt): name
+            for name, caller in callers
+        }
+        for future in as_completed(future_to_name):
+            name = future_to_name[future]
+            try:
+                results[name] = future.result()
+            except Exception:  # noqa: BLE001
+                results[name] = None
+    return [(name, results[name]) for name, _ in callers]
 
 
 def evaluate_essay(
     essay_text: str, rubric_text: str
-) -> Optional[dict]:
+) -> dict | None:
     """에세이를 3개 LLM으로 평가하고 모델별 결과를 반환한다.
 
     Returns:
@@ -148,8 +157,8 @@ def evaluate_essay(
     prompt = build_evaluation_prompt(rubric_text, essay_text)
     responses = _collect_responses(prompt)
 
-    by_model: dict[str, Optional[dict]] = {}
-    best: Optional[dict] = None
+    by_model: dict[str, dict | None] = {}
+    best: dict | None = None
     best_score = -1.0
 
     for name, raw_text in responses:

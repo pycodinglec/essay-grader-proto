@@ -4,6 +4,8 @@ Streamlit 기반 UI로, 에세이 업로드 -> OCR -> 제출물 식별 ->
 채점기준 검증 -> 3-LLM 평가 -> report.xlsx 생성 파이프라인을 제공한다.
 """
 
+from collections.abc import Callable
+
 import streamlit as st
 
 from src import auth, config, essay_splitter, evaluator, file_handler, ocr, report, rubric, submission
@@ -98,13 +100,16 @@ def run_ocr_and_identify(
 
 
 def run_grading(
-    submissions: list[dict], rubric_text: str
+    submissions: list[dict],
+    rubric_text: str,
+    on_progress: Callable[[int, int], None] | None = None,
 ) -> tuple[list[dict], bytes, str | None]:
     """제출물을 3-LLM으로 채점하고 리포트를 생성한다.
 
     Args:
         submissions: 제출물 dict 리스트.
         rubric_text: 채점기준표 텍스트.
+        on_progress: 각 에세이 채점 시작 전 호출되는 콜백(current, total).
 
     Returns:
         (채점완료_제출물, report_bytes, 에러메시지_또는_None) 튜플.
@@ -114,6 +119,8 @@ def run_grading(
     total = len(submissions)
 
     for i, sub in enumerate(submissions, start=1):
+        if on_progress is not None:
+            on_progress(i, total)
         try:
             result = evaluator.evaluate_essay(
                 sub["에세이텍스트"], rubric_text
@@ -260,28 +267,17 @@ def _execute_grading() -> None:
     """채점 프로세스를 실행하고 진행률을 표시한다."""
     subs = st.session_state.submissions
     rubric_text = st.session_state.rubric_text
-    total = len(subs)
-    graded: list[dict] = []
-    error_msg: str | None = None
     progress_bar = st.progress(0)
     status_text = st.empty()
 
-    for i, sub in enumerate(subs, start=1):
-        status_text.text(format_progress_message(total, i))
-        progress_bar.progress(i / total)
-        try:
-            result = evaluator.evaluate_essay(
-                sub["에세이텍스트"], rubric_text
-            )
-            if result is None:
-                error_msg = build_error_message(i)
-                break
-            graded.append({**sub, "평가결과": result})
-        except Exception:  # noqa: BLE001
-            error_msg = build_error_message(i)
-            break
+    def _on_progress(current: int, total: int) -> None:
+        status_text.text(format_progress_message(total, current))
+        progress_bar.progress((current - 1) / total)
 
-    report_bytes = report.build_report(graded)
+    graded, report_bytes, error_msg = run_grading(
+        subs, rubric_text, on_progress=_on_progress
+    )
+
     st.session_state.report_bytes = report_bytes
     st.session_state.grading_error = error_msg
     st.session_state.grading_complete = True
@@ -289,6 +285,7 @@ def _execute_grading() -> None:
     if error_msg:
         st.error(error_msg)
     else:
+        progress_bar.progress(1.0)
         status_text.text("채점이 완료되었습니다!")
 
 

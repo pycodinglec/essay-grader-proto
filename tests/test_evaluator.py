@@ -90,11 +90,11 @@ class TestBuildEvaluationPrompt:
 class TestCallGemini:
     """call_gemini 함수 테스트."""
 
-    @patch("src.evaluator.genai")
-    def test_uses_correct_model(self, mock_genai: MagicMock) -> None:
+    @patch("src.evaluator.config.get_genai_client")
+    def test_uses_correct_model(self, mock_get_client: MagicMock) -> None:
         """gemini-3-flash 모델을 사용하여 호출한다."""
         mock_client = MagicMock()
-        mock_genai.Client.return_value = mock_client
+        mock_get_client.return_value = mock_client
         mock_response = MagicMock()
         mock_response.text = VALID_RESPONSE_JSON
         mock_client.models.generate_content.return_value = mock_response
@@ -104,11 +104,11 @@ class TestCallGemini:
         call_kwargs = mock_client.models.generate_content.call_args
         assert call_kwargs.kwargs["model"] == "gemini-3-flash"
 
-    @patch("src.evaluator.genai")
-    def test_sends_prompt_as_contents(self, mock_genai: MagicMock) -> None:
+    @patch("src.evaluator.config.get_genai_client")
+    def test_sends_prompt_as_contents(self, mock_get_client: MagicMock) -> None:
         """프롬프트를 contents 파라미터로 전달한다."""
         mock_client = MagicMock()
-        mock_genai.Client.return_value = mock_client
+        mock_get_client.return_value = mock_client
         mock_response = MagicMock()
         mock_response.text = VALID_RESPONSE_JSON
         mock_client.models.generate_content.return_value = mock_response
@@ -118,11 +118,11 @@ class TestCallGemini:
         call_kwargs = mock_client.models.generate_content.call_args
         assert call_kwargs.kwargs["contents"] == "my prompt"
 
-    @patch("src.evaluator.genai")
-    def test_returns_response_text(self, mock_genai: MagicMock) -> None:
+    @patch("src.evaluator.config.get_genai_client")
+    def test_returns_response_text(self, mock_get_client: MagicMock) -> None:
         """API 응답의 텍스트를 반환한다."""
         mock_client = MagicMock()
-        mock_genai.Client.return_value = mock_client
+        mock_get_client.return_value = mock_client
         mock_response = MagicMock()
         mock_response.text = "응답 텍스트입니다"
         mock_client.models.generate_content.return_value = mock_response
@@ -131,19 +131,18 @@ class TestCallGemini:
 
         assert result == "응답 텍스트입니다"
 
-    @patch("src.evaluator.genai")
-    def test_uses_google_api_key(self, mock_genai: MagicMock) -> None:
-        """config.GOOGLE_API_KEY를 사용한다."""
+    @patch("src.evaluator.config.get_genai_client")
+    def test_uses_genai_singleton(self, mock_get_client: MagicMock) -> None:
+        """config.get_genai_client 싱글턴을 사용한다."""
         mock_client = MagicMock()
-        mock_genai.Client.return_value = mock_client
+        mock_get_client.return_value = mock_client
         mock_response = MagicMock()
         mock_response.text = "text"
         mock_client.models.generate_content.return_value = mock_response
 
-        with patch("src.evaluator.config.GOOGLE_API_KEY", "test-key-g"):
-            call_gemini("prompt")
+        call_gemini("prompt")
 
-        mock_genai.Client.assert_called_once_with(api_key="test-key-g")
+        mock_get_client.assert_called_once()
 
 
 # ---------------------------------------------------------------------------
@@ -216,7 +215,9 @@ class TestCallOpenai:
         with patch("src.evaluator.config.OPENAI_API_KEY", "test-key-o"):
             call_openai("prompt")
 
-        mock_openai.OpenAI.assert_called_once_with(api_key="test-key-o")
+        mock_openai.OpenAI.assert_called_once_with(
+            api_key="test-key-o", timeout=1800.0
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -308,7 +309,9 @@ class TestCallAnthropic:
         with patch("src.evaluator.config.ANTHROPIC_API_KEY", "test-key-a"):
             call_anthropic("prompt")
 
-        mock_anthropic.Anthropic.assert_called_once_with(api_key="test-key-a")
+        mock_anthropic.Anthropic.assert_called_once_with(
+            api_key="test-key-a", timeout=1800.0
+        )
 
 
 # ---------------------------------------------------------------------------

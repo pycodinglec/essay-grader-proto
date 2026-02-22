@@ -370,6 +370,63 @@ class TestRunGrading:
         assert len(graded) == 2
         assert "3번째" in error_msg
 
+    @patch("app.report")
+    @patch("app.evaluator")
+    def test_on_progress_callback_called(self, mock_eval, mock_report):
+        """on_progress 콜백이 각 제출물 채점 시작 전에 호출된다."""
+        from app import run_grading
+
+        eval_result = {
+            "best": {"scores": [{"번호": 1, "점수": 10}], "feedback": "좋음"},
+            "by_model": {
+                "gemini": {"scores": [{"번호": 1, "점수": 10}], "feedback": "좋음"},
+                "openai": {"scores": [{"번호": 1, "점수": 10}], "feedback": "좋음"},
+                "anthropic": {"scores": [{"번호": 1, "점수": 10}], "feedback": "좋음"},
+            },
+        }
+        mock_eval.evaluate_essay.return_value = eval_result
+        mock_report.build_report.return_value = b"xlsx"
+
+        progress_calls = []
+        submissions = [
+            {"학번": "10301", "이름": "홍길동", "에세이텍스트": "에세이1"},
+            {"학번": "10302", "이름": "김영희", "에세이텍스트": "에세이2"},
+            {"학번": "10303", "이름": "박철수", "에세이텍스트": "에세이3"},
+        ]
+
+        run_grading(
+            submissions, "rubric",
+            on_progress=lambda cur, tot: progress_calls.append((cur, tot)),
+        )
+
+        assert progress_calls == [(1, 3), (2, 3), (3, 3)]
+
+    @patch("app.report")
+    @patch("app.evaluator")
+    def test_on_progress_none_is_safe(self, mock_eval, mock_report):
+        """on_progress=None이면 콜백 없이 정상 동작한다."""
+        from app import run_grading
+
+        eval_result = {
+            "best": {"scores": [{"번호": 1, "점수": 10}], "feedback": "좋음"},
+            "by_model": {
+                "gemini": {"scores": [{"번호": 1, "점수": 10}], "feedback": "좋음"},
+                "openai": {"scores": [{"번호": 1, "점수": 10}], "feedback": "좋음"},
+                "anthropic": {"scores": [{"번호": 1, "점수": 10}], "feedback": "좋음"},
+            },
+        }
+        mock_eval.evaluate_essay.return_value = eval_result
+        mock_report.build_report.return_value = b"xlsx"
+
+        submissions = [
+            {"학번": "10301", "이름": "홍길동", "에세이텍스트": "에세이1"},
+        ]
+
+        graded, _, error_msg = run_grading(submissions, "rubric", on_progress=None)
+
+        assert len(graded) == 1
+        assert error_msg is None
+
 
 # ---------------------------------------------------------------------------
 # progress_message 테스트

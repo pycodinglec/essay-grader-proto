@@ -21,12 +21,12 @@
 LLM 응답을 JSON 파싱하여 페이지 그룹을 반환한다. 마크다운 코드 펜스 처리를 지원하며, 유효하지 않은 응답 시 폴백한다.
 
 ### `call_splitter_llm(prompt: str) -> str`
-Google `genai.Client`를 사용하여 Gemini 3.1 Pro Preview 모델을 호출한다.
+`config.get_genai_client()` 싱글턴을 사용하여 Gemini 3.1 Pro Preview 모델을 호출한다.
 
 ## LLM 모델
 
 - **Gemini 3.1 Pro Preview** (`gemini-3.1-pro-preview`)
-- API 키: `config.GOOGLE_API_KEY`
+- genai 클라이언트: `config.get_genai_client()` (싱글턴, timeout=1800)
 
 ## 폴백 동작
 

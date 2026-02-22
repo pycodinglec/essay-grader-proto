@@ -9,8 +9,6 @@ from __future__ import annotations
 import json
 import re
 
-from google import genai
-
 from src import config
 
 SPLITTER_MODEL = "gemini-3.1-pro-preview"
@@ -90,7 +88,7 @@ def parse_boundary_response(
 
 def call_splitter_llm(prompt: str) -> str:
     """Gemini 3.1 Pro Preview를 호출하여 응답 텍스트를 반환한다."""
-    client = genai.Client(api_key=config.GOOGLE_API_KEY)
+    client = config.get_genai_client()
     response = client.models.generate_content(
         model=SPLITTER_MODEL, contents=prompt
     )

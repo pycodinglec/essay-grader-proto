@@ -22,20 +22,19 @@
 - `EVALUATION_PROMPT_TEMPLATE`에 채점기준표와 에세이 텍스트를 대입하여 완성된 프롬프트 문자열을 반환
 
 ### `call_gemini(prompt: str) -> str`
-- google-genai SDK(`from google import genai`)를 사용하여 Gemini 3 Flash API 호출
-- `config.GOOGLE_API_KEY` 사용
+- `config.get_genai_client()` 싱글턴을 사용하여 Gemini 3 Flash API 호출
 - 모델명: `gemini-3-flash`
 - 응답의 `.text` 반환
 
 ### `call_openai(prompt: str) -> str`
 - openai SDK를 사용하여 GPT 5.2 API 호출
-- `config.OPENAI_API_KEY` 사용
+- `config.OPENAI_API_KEY` 사용, `timeout=1800.0` 설정
 - 모델명: `gpt-5.2`
 - user 메시지로 프롬프트를 전달하고 `.choices[0].message.content` 반환
 
 ### `call_anthropic(prompt: str) -> str`
 - anthropic SDK를 사용하여 Sonnet 4.6 API 호출
-- `config.ANTHROPIC_API_KEY` 사용
+- `config.ANTHROPIC_API_KEY` 사용, `timeout=1800.0` 설정
 - 모델명: `claude-sonnet-4-6-20250514`, `max_tokens=4096`
 - user 메시지로 프롬프트를 전달하고 `.content[0].text` 반환
 
@@ -49,7 +48,7 @@
 - `evaluation["scores"]`의 모든 `점수` 값을 합산하여 float 반환
 
 ### `evaluate_essay(essay_text: str, rubric_text: str) -> dict | None`
-- 프롬프트를 생성하고 3개 LLM을 순차 호출
+- 프롬프트를 생성하고 3개 LLM을 병렬 호출 (ThreadPoolExecutor, max_workers=3)
 - 각 응답을 파싱하고 점수를 합산하여 최고점 응답을 `best`로 선택
 - 모든 모델의 결과를 `by_model`에 보존 (실패/파싱 실패 시 `None`)
 - 반환 구조: `{"best": {"scores": [...], "feedback": "..."}, "by_model": {"gemini": dict|None, "openai": dict|None, "anthropic": dict|None}}`
@@ -64,4 +63,8 @@
 - 파싱된 평가 결과의 구조를 검증 (`scores` 리스트, `feedback` 문자열, 각 항목의 `번호`/`점수`)
 
 ### `_collect_responses(prompt: str) -> list[tuple[str, str | None]]`
-- 3개 LLM을 순차 호출하여 (이름, 응답텍스트) 목록 반환, 실패 시 `None` 기록
+- ThreadPoolExecutor(max_workers=3)로 3개 LLM을 병렬 호출하여 (이름, 응답텍스트) 목록 반환, 실패 시 `None` 기록
+
+## 타입 표기
+- `from __future__ import annotations` 사용
+- `dict | None` 유니온 형태 사용 (`Optional` 미사용)

@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from collections import defaultdict
 from io import BytesIO
-from typing import Optional
 
 import openpyxl
 
@@ -21,14 +20,14 @@ _HEADERS = [
 ]
 
 
-def _model_total_score(model_eval: Optional[dict]) -> int | float | str:
+def _model_total_score(model_eval: dict | None) -> int | float | str:
     """모델 평가 결과에서 점수 합산을 반환한다. 실패 시 빈 문자열."""
     if model_eval is None:
         return ""
     return sum(item["점수"] for item in model_eval["scores"])
 
 
-def _model_feedback(model_eval: Optional[dict]) -> str:
+def _model_feedback(model_eval: dict | None) -> str:
     """모델 평가 결과에서 피드백을 반환한다. 실패 시 빈 문자열."""
     if model_eval is None:
         return ""

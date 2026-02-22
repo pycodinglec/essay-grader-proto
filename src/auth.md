@@ -15,11 +15,13 @@
 
 ### `verify_password(password: str, stored_hash: str) -> bool`
 - 입력 비밀번호를 `hash_password`로 해시한 뒤 `stored_hash`와 비교한다.
+- `hmac.compare_digest`를 사용하여 상수 시간(constant-time) 비교를 수행한다 (타이밍 공격 방지).
 - 일치하면 `True`, 불일치하면 `False`를 반환한다.
 - `stored_hash`가 빈 문자열인 경우 항상 `False`를 반환한다(미설정 방지).
 
 ## 의존성
 - `hashlib` (표준 라이브러리)
+- `hmac` (표준 라이브러리) — 상수 시간 문자열 비교
 
 ## 사용 예시
 ```python
