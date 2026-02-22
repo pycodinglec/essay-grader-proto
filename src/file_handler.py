@@ -46,7 +46,6 @@ def extract_zip(zip_bytes: bytes) -> list[tuple[str, bytes]]:
                     "ZIP 파일에 폴더가 포함되어 있습니다. "
                     "파일만 포함된 ZIP을 업로드해 주세요."
                 )
-        for info in zf.infolist():
             if validate_file_type(info.filename):
                 result.append((info.filename, zf.read(info.filename)))
     return result

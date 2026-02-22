@@ -32,10 +32,10 @@ class TestBuildSplitterPrompt:
     """build_splitter_prompt 함수 테스트."""
 
     def test_includes_page_texts(self):
-        """프롬프트에 페이지 에세이텍스트가 포함된다."""
+        """프롬프트에 페이지 에세이텍스트가 <content> 태그로 감싸여 포함된다."""
         result = build_splitter_prompt(SAMPLE_PAGES)
 
-        assert "첫 번째 에세이 내용입니다." in result
+        assert "<content>첫 번째 에세이 내용입니다.</content>" in result
 
     def test_includes_student_ids(self):
         """프롬프트에 학번이 포함된다."""

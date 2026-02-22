@@ -72,6 +72,18 @@ class TestBuildEvaluationPrompt:
 
         assert isinstance(result, str)
 
+    def test_wraps_rubric_with_content_tags(self):
+        """채점기준표가 <content> 태그로 감싸진다."""
+        result = build_evaluation_prompt(SAMPLE_RUBRIC, SAMPLE_ESSAY)
+
+        assert f"<content>\n{SAMPLE_RUBRIC}\n</content>" in result
+
+    def test_wraps_essay_with_content_tags(self):
+        """에세이가 <content> 태그로 감싸진다."""
+        result = build_evaluation_prompt(SAMPLE_RUBRIC, SAMPLE_ESSAY)
+
+        assert f"<content>\n{SAMPLE_ESSAY}\n</content>" in result
+
     def test_uses_template(self):
         """EVALUATION_PROMPT_TEMPLATE을 기반으로 프롬프트를 생성한다."""
         result = build_evaluation_prompt(SAMPLE_RUBRIC, SAMPLE_ESSAY)
@@ -92,7 +104,7 @@ class TestCallGemini:
 
     @patch("src.evaluator.config.get_genai_client")
     def test_uses_correct_model(self, mock_get_client: MagicMock) -> None:
-        """gemini-3-flash 모델을 사용하여 호출한다."""
+        """gemini-3-flash-preview 모델을 사용하여 호출한다."""
         mock_client = MagicMock()
         mock_get_client.return_value = mock_client
         mock_response = MagicMock()
@@ -102,7 +114,7 @@ class TestCallGemini:
         call_gemini("test prompt")
 
         call_kwargs = mock_client.models.generate_content.call_args
-        assert call_kwargs.kwargs["model"] == "gemini-3-flash"
+        assert call_kwargs.kwargs["model"] == "gemini-3-flash-preview"
 
     @patch("src.evaluator.config.get_genai_client")
     def test_sends_prompt_as_contents(self, mock_get_client: MagicMock) -> None:
@@ -143,6 +155,34 @@ class TestCallGemini:
         call_gemini("prompt")
 
         mock_get_client.assert_called_once()
+
+
+class TestCallGeminiEmptyResponse:
+    """call_gemini 빈 응답 처리 테스트."""
+
+    @patch("src.evaluator.config.get_genai_client")
+    def test_empty_text_raises_value_error(self, mock_get_client: MagicMock) -> None:
+        """빈 텍스트 응답은 ValueError를 발생시킨다."""
+        mock_client = MagicMock()
+        mock_get_client.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.text = ""
+        mock_client.models.generate_content.return_value = mock_response
+
+        with pytest.raises(ValueError, match="빈 응답"):
+            call_gemini("prompt")
+
+    @patch("src.evaluator.config.get_genai_client")
+    def test_none_text_raises_value_error(self, mock_get_client: MagicMock) -> None:
+        """None 텍스트 응답은 ValueError를 발생시킨다."""
+        mock_client = MagicMock()
+        mock_get_client.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.text = None
+        mock_client.models.generate_content.return_value = mock_response
+
+        with pytest.raises(ValueError, match="빈 응답"):
+            call_gemini("prompt")
 
 
 # ---------------------------------------------------------------------------
@@ -216,8 +256,38 @@ class TestCallOpenai:
             call_openai("prompt")
 
         mock_openai.OpenAI.assert_called_once_with(
-            api_key="test-key-o", timeout=1800.0
+            api_key="test-key-o", timeout=180.0
         )
+
+
+class TestCallOpenaiEmptyResponse:
+    """call_openai 빈 응답 처리 테스트."""
+
+    @patch("src.evaluator.openai")
+    def test_empty_choices_raises_value_error(self, mock_openai: MagicMock) -> None:
+        """빈 choices는 ValueError를 발생시킨다."""
+        mock_client = MagicMock()
+        mock_openai.OpenAI.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.choices = []
+        mock_client.chat.completions.create.return_value = mock_response
+
+        with pytest.raises(ValueError, match="빈 choices"):
+            call_openai("prompt")
+
+    @patch("src.evaluator.openai")
+    def test_none_content_raises_value_error(self, mock_openai: MagicMock) -> None:
+        """None content는 ValueError를 발생시킨다."""
+        mock_client = MagicMock()
+        mock_openai.OpenAI.return_value = mock_client
+        mock_choice = MagicMock()
+        mock_choice.message.content = None
+        mock_response = MagicMock()
+        mock_response.choices = [mock_choice]
+        mock_client.chat.completions.create.return_value = mock_response
+
+        with pytest.raises(ValueError, match="빈 응답"):
+            call_openai("prompt")
 
 
 # ---------------------------------------------------------------------------
@@ -230,7 +300,7 @@ class TestCallAnthropic:
 
     @patch("src.evaluator.anthropic")
     def test_uses_correct_model(self, mock_anthropic: MagicMock) -> None:
-        """claude-sonnet-4-6-20250514 모델을 사용하여 호출한다."""
+        """claude-sonnet-4-6 모델을 사용하여 호출한다."""
         mock_client = MagicMock()
         mock_anthropic.Anthropic.return_value = mock_client
         mock_content_block = MagicMock()
@@ -242,7 +312,7 @@ class TestCallAnthropic:
         call_anthropic("test prompt")
 
         call_kwargs = mock_client.messages.create.call_args
-        assert call_kwargs.kwargs["model"] == "claude-sonnet-4-6-20250514"
+        assert call_kwargs.kwargs["model"] == "claude-sonnet-4-6"
 
     @patch("src.evaluator.anthropic")
     def test_sends_prompt_as_user_message(
@@ -310,8 +380,24 @@ class TestCallAnthropic:
             call_anthropic("prompt")
 
         mock_anthropic.Anthropic.assert_called_once_with(
-            api_key="test-key-a", timeout=1800.0
+            api_key="test-key-a", timeout=180.0
         )
+
+
+class TestCallAnthropicEmptyResponse:
+    """call_anthropic 빈 응답 처리 테스트."""
+
+    @patch("src.evaluator.anthropic")
+    def test_empty_content_raises_value_error(self, mock_anthropic: MagicMock) -> None:
+        """빈 content는 ValueError를 발생시킨다."""
+        mock_client = MagicMock()
+        mock_anthropic.Anthropic.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.content = []
+        mock_client.messages.create.return_value = mock_response
+
+        with pytest.raises(ValueError, match="빈 content"):
+            call_anthropic("prompt")
 
 
 # ---------------------------------------------------------------------------

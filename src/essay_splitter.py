@@ -33,7 +33,7 @@ def build_splitter_prompt(pages: list[dict]) -> str:
         lines.append(
             f"[페이지 {i}] 학번: {page.get('학번', '')} | "
             f"이름: {page.get('이름', '')} | "
-            f"텍스트: {text_preview}"
+            f"텍스트: <content>{text_preview}</content>"
         )
 
     lines.append(

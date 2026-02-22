@@ -22,6 +22,7 @@ Streamlit 웹 애플리케이션 진입점. 서논술형 에세이 자동 채점
 | `uploaded_files_data` | list[tuple[str, bytes]] | 처리된 업로드 파일 |
 | `submissions` | list[dict] | 식별된 제출물 |
 | `unidentified` | list[str] | 미식별 파일명 |
+| `ocr_complete` | bool | OCR 완료 여부. Streamlit 재실행(rerun) 시 OCR이 중복 실행되는 것을 방지 |
 | `rubric_data` | list[dict] | 파싱된 채점기준표 |
 | `rubric_text` | str | LLM 프롬프트용 채점기준 텍스트 |
 | `grading_complete` | bool | 채점 완료 여부 |
@@ -51,7 +52,7 @@ Streamlit 웹 애플리케이션 진입점. 서논술형 에세이 자동 채점
 
 - `show_prompts_section()` -- 사용 중인 LLM 프롬프트를 expander로 표시 (OCR/에세이 분할/채점 프롬프트). 인증 직후 `main()`에서 호출
 - `show_login_page()` -- 패스워드 입력 및 인증 처리
-- `show_upload_section()` -- 에세이 파일 업로드 UI (채점기준표 검증 후 표시, 파일 업로드 즉시 자동 처리 + OCR 실행)
+- `show_upload_section()` -- 에세이 파일 업로드 UI (채점기준표 검증 후 표시, 파일 업로드 즉시 자동 처리 + OCR 실행). `ocr_complete` 플래그로 Streamlit rerun 시 OCR 중복 실행 방지
 - `_process_essay_uploads(uploaded_files)` -- 업로드 파일 처리 헬퍼
 - `_run_ocr_with_progress()` -- OCR 실행 (진행률 바 + 상태 텍스트 표시)
 - `show_identification_results(submissions, unidentified)` -- 제출물 식별 결과 표시
@@ -81,7 +82,7 @@ Streamlit 웹 애플리케이션 진입점. 서논술형 에세이 자동 채점
 1. 미인증 -> `show_login_page()` 표시
 2. 인증 완료 -> 프롬프트 공개 (`show_prompts_section()`)
 3. 채점기준표 업로드 즉시 자동 검증 -> 기준표 확인
-4. (rubric_data 존재 시) 에세이 업로드 즉시 자동 처리 + OCR+식별 (진행률 바)
+4. (rubric_data 존재 시) 에세이 업로드 즉시 자동 처리 + OCR+식별 (진행률 바). `ocr_complete` 플래그로 이후 rerun에서 OCR 재실행 방지 (예: "채점 시작" 버튼 클릭 시 진행률 바가 다시 초기화되는 문제 해결)
 5. 제출물 식별 결과 표시
 6. 채점 시작 -> 진행률 바 + 상태 메시지 표시
 7. 채점 완료 또는 에러 -> 다운로드 버튼 제공

@@ -8,16 +8,20 @@ Streamlit UI 렌더링은 직접 테스트하지 않는다. 대신 비즈니스 
 
 ## 테스트 클래스 및 커버리지
 
-### TestRunOcrAndIdentify (4개 테스트)
+### TestRunOcrAndIdentify (8개 테스트)
 
-`run_ocr_and_identify` 함수를 테스트한다. `ocr.ocr_file`과 `submission.build_submissions`를 모킹한다.
+`run_ocr_and_identify` 함수를 테스트한다. `ocr.ocr_file`, `essay_splitter.split_essays`, `submission.build_submissions`를 모킹한다.
 
 - `test_returns_submissions_and_unidentified` -- 정상 흐름에서 식별/미식별 결과 반환 확인
-- `test_builds_correct_file_texts_structure` -- `build_submissions`에 전달되는 `(filename, texts)` 구조 검증
+- `test_builds_correct_file_ocr_results_structure` -- `build_submissions`에 전달되는 `(filename, [dict])` 구조 검증
 - `test_empty_file_list` -- 빈 입력에 대한 빈 결과 반환 확인
 - `test_multiple_files_ocr_called_for_each` -- 각 파일별 `ocr_file` 호출 횟수 검증
+- `test_calls_essay_splitter_before_build_submissions` -- OCR 결과를 essay_splitter에 전달 확인
+- `test_passes_split_results_to_build_submissions` -- essay_splitter 결과가 build_submissions에 전달 확인
+- `test_on_progress_callback_called_per_file` -- on_progress 콜백 파일별 호출 확인
+- `test_on_progress_none_is_safe` -- on_progress=None 안전 동작 확인
 
-### TestRunGrading (8개 테스트)
+### TestRunGrading (10개 테스트)
 
 `run_grading` 함수를 테스트한다. `evaluator.evaluate_essay`와 `report.build_report`를 모킹한다.
 
@@ -29,6 +33,8 @@ Streamlit UI 렌더링은 직접 테스트하지 않는다. 대신 비즈니스 
 - `test_report_build_called_with_graded_submissions` -- `build_report` 호출 인자 검증
 - `test_empty_submissions_returns_empty` -- 빈 제출물에 대한 처리
 - `test_error_on_third_of_five_submissions` -- 5개 중 3번째 에러 시 2개만 결과에 포함
+- `test_on_progress_callback_called` -- on_progress 콜백 제출물별 호출 확인
+- `test_on_progress_none_is_safe` -- on_progress=None 안전 동작 확인
 
 ### TestProgressMessage (3개 테스트)
 
@@ -37,6 +43,14 @@ Streamlit UI 렌더링은 직접 테스트하지 않는다. 대신 비즈니스 
 - `test_format_progress_message` -- 기본 형식 "n개의 제출물 중 k번째 문서를 채점중..."
 - `test_format_progress_message_first` -- 첫 번째 문서
 - `test_format_progress_message_last` -- 마지막 문서
+
+### TestFormatOcrProgressMessage (3개 테스트)
+
+`format_ocr_progress_message` 함수를 테스트한다.
+
+- `test_format_ocr_progress_message` -- 기본 형식 "N개 파일 중 K번째 파일 OCR 중..."
+- `test_format_ocr_progress_message_first` -- 첫 번째 파일
+- `test_format_ocr_progress_message_last` -- 마지막 파일
 
 ### TestBuildErrorMessage (2개 테스트)
 
@@ -54,4 +68,4 @@ Streamlit UI 렌더링은 직접 테스트하지 않는다. 대신 비즈니스 
 
 ## 총 테스트 수
 
-21개 테스트
+28개 테스트

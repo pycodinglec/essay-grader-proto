@@ -20,7 +20,7 @@
 - **출력**: 유효하면 `True`, 아니면 `False`
 
 ### `extract_zip(zip_bytes: bytes) -> list[tuple[str, bytes]]`
-ZIP 바이트에서 유효한 파일을 추출한다.
+ZIP 바이트에서 유효한 파일을 추출한다. 단일 패스(single-pass)로 `zf.infolist()`를 한 번만 순회하며, 폴더 검사와 파일 추출을 동시에 수행한다.
 
 - ZIP 안에 폴더(디렉터리)가 포함되어 있으면 `ValueError`를 발생시킨다
 - 파일 경로에 `/`가 포함된 경우에도 폴더로 간주하여 거부한다

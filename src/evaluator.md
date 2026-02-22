@@ -13,7 +13,7 @@
 ### `EVALUATION_PROMPT_TEMPLATE`
 - 3개 LLM에 전송하는 공통 프롬프트 템플릿
 - prompt injection 방어 문구가 앞에 포함됨
-- `{rubric}`, `{essay}` 플레이스홀더를 사용
+- `{rubric}`, `{essay}` 플레이스홀더를 사용하며, 각각 `<content>` 태그로 감싸서 사용자 입력 영역을 명시
 - JSON 형식(`scores`, `feedback`) 응답을 요구
 
 ## 공개 함수
@@ -23,19 +23,22 @@
 
 ### `call_gemini(prompt: str) -> str`
 - `config.get_genai_client()` 싱글턴을 사용하여 Gemini 3 Flash API 호출
-- 모델명: `gemini-3-flash`
+- 모델명: `gemini-3-flash-preview`
+- 빈 응답(`.text`가 빈 문자열 또는 None)일 경우 `ValueError` 발생
 - 응답의 `.text` 반환
 
 ### `call_openai(prompt: str) -> str`
 - openai SDK를 사용하여 GPT 5.2 API 호출
-- `config.OPENAI_API_KEY` 사용, `timeout=1800.0` 설정
+- `config.OPENAI_API_KEY` 사용, `timeout=180.0` 설정 (3분)
 - 모델명: `gpt-5.2`
+- 빈 choices 또는 빈 content일 경우 `ValueError` 발생
 - user 메시지로 프롬프트를 전달하고 `.choices[0].message.content` 반환
 
 ### `call_anthropic(prompt: str) -> str`
 - anthropic SDK를 사용하여 Sonnet 4.6 API 호출
-- `config.ANTHROPIC_API_KEY` 사용, `timeout=1800.0` 설정
-- 모델명: `claude-sonnet-4-6-20250514`, `max_tokens=4096`
+- `config.ANTHROPIC_API_KEY` 사용, `timeout=180.0` 설정 (3분)
+- 모델명: `claude-sonnet-4-6`, `max_tokens=4096`
+- 빈 content일 경우 `ValueError` 발생
 - user 메시지로 프롬프트를 전달하고 `.content[0].text` 반환
 
 ### `parse_evaluation_response(response_text: str) -> dict | None`

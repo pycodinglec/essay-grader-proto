@@ -21,8 +21,8 @@ EVALUATION_PROMPT_TEMPLATE = (
     "당신은 에세이를 채점하는 숙련된 평가관입니다. "
     "당신의 임무는 채점기준표에 따라 에세이에 대한 채점을 수행하고, "
     "채점기준표에 근거하여 피드백 텍스트를 작성하는 것입니다.\n\n"
-    "다음은 채점기준표입니다:\n{rubric}\n\n"
-    "다음은 에세이입니다:\n{essay}\n\n"
+    "다음은 채점기준표입니다:\n<content>\n{rubric}\n</content>\n\n"
+    "다음은 에세이입니다:\n<content>\n{essay}\n</content>\n\n"
     "반드시 다음 JSON 형식으로만 응답하세요:\n"
     '{{"scores": [{{"번호": 1, "점수": 점수값}}, ...], "feedback": "피드백 텍스트"}}'
 )
@@ -39,33 +39,42 @@ def call_gemini(prompt: str) -> str:
     """Gemini 3 Flash API를 호출하여 응답 텍스트를 반환한다."""
     client = config.get_genai_client()
     response = client.models.generate_content(
-        model="gemini-3-flash", contents=prompt
+        model="gemini-3-flash-preview", contents=prompt
     )
+    if not response.text:
+        raise ValueError("Gemini API가 빈 응답을 반환했습니다.")
     return response.text
 
 
 def call_openai(prompt: str) -> str:
     """GPT 5.2 API를 호출하여 응답 텍스트를 반환한다."""
     client = openai.OpenAI(
-        api_key=config.OPENAI_API_KEY, timeout=1800.0
+        api_key=config.OPENAI_API_KEY, timeout=180.0
     )
     response = client.chat.completions.create(
         model="gpt-5.2",
         messages=[{"role": "user", "content": prompt}],
     )
-    return response.choices[0].message.content
+    if not response.choices:
+        raise ValueError("OpenAI API가 빈 choices를 반환했습니다.")
+    content = response.choices[0].message.content
+    if not content:
+        raise ValueError("OpenAI API가 빈 응답을 반환했습니다.")
+    return content
 
 
 def call_anthropic(prompt: str) -> str:
     """Sonnet 4.6 API를 호출하여 응답 텍스트를 반환한다."""
     client = anthropic.Anthropic(
-        api_key=config.ANTHROPIC_API_KEY, timeout=1800.0
+        api_key=config.ANTHROPIC_API_KEY, timeout=180.0
     )
     response = client.messages.create(
-        model="claude-sonnet-4-6-20250514",
+        model="claude-sonnet-4-6",
         max_tokens=4096,
         messages=[{"role": "user", "content": prompt}],
     )
+    if not response.content:
+        raise ValueError("Anthropic API가 빈 content를 반환했습니다.")
     return response.content[0].text
 
 

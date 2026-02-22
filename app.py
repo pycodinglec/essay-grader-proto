@@ -43,6 +43,7 @@ def init_session_state() -> None:
         "uploaded_files_data": [],
         "submissions": [],
         "unidentified": [],
+        "ocr_complete": False,
         "rubric_data": [],
         "rubric_text": "",
         "grading_complete": False,
@@ -206,14 +207,14 @@ def show_upload_section() -> None:
         key="essay_uploader",
     )
 
-    if uploaded_files:
+    if uploaded_files and not st.session_state.ocr_complete:
         all_files = _process_essay_uploads(uploaded_files)
         if all_files:
             st.session_state.uploaded_files_data = all_files
             st.session_state.submissions = []
             st.session_state.unidentified = []
-            st.success(f"{len(all_files)}개의 파일이 처리되었습니다.")
             _run_ocr_with_progress()
+            st.session_state.ocr_complete = True
 
 
 def _run_ocr_with_progress() -> None:

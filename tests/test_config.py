@@ -39,7 +39,7 @@ class TestGetGenaiClient:
     def test_passes_http_options_with_timeout(
         self, mock_genai: MagicMock
     ) -> None:
-        """HttpOptions(timeout=1_800_000ms)을 전달한다."""
+        """HttpOptions(timeout=180_000ms)을 전달한다."""
         mock_client = MagicMock()
         mock_genai.Client.return_value = mock_client
 
@@ -47,4 +47,4 @@ class TestGetGenaiClient:
 
         call_kwargs = mock_genai.Client.call_args
         http_opts = call_kwargs.kwargs["http_options"]
-        assert http_opts.timeout == 1_800_000
+        assert http_opts.timeout == 180_000

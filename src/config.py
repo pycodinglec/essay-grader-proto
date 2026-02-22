@@ -27,12 +27,12 @@ _genai_client: genai.Client | None = None
 def get_genai_client() -> genai.Client:
     """genai.Client 싱글턴을 반환한다.
 
-    최초 호출 시 lazy 초기화하며, timeout=1,800,000ms(1800초)를 설정한다.
+    최초 호출 시 lazy 초기화하며, timeout=180,000ms(180초)를 설정한다.
     """
     global _genai_client  # noqa: PLW0603
     if _genai_client is None:
         _genai_client = genai.Client(
             api_key=GOOGLE_API_KEY,
-            http_options=HttpOptions(timeout=1_800_000),
+            http_options=HttpOptions(timeout=180_000),
         )
     return _genai_client

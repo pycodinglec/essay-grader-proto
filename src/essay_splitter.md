@@ -15,7 +15,7 @@
 프롬프트 생성 -> LLM 호출 -> 응답 파싱을 수행한다. 예외 발생 시 전체를 하나의 그룹으로 폴백한다.
 
 ### `build_splitter_prompt(pages: list[dict]) -> str`
-페이지별 OCR 결과를 기반으로 경계 감지 프롬프트를 생성한다. 에세이텍스트는 100자까지만 사용하며, prompt injection 방어 문구를 포함한다.
+페이지별 OCR 결과를 기반으로 경계 감지 프롬프트를 생성한다. 에세이텍스트는 100자까지만 사용하며, prompt injection 방어 문구를 포함한다. 사용자 콘텐츠(에세이텍스트)는 `<content>...</content>` 태그로 감싸서 LLM이 사용자 입력과 시스템 지시를 명확히 구분할 수 있도록 하여 prompt injection 방어를 강화한다.
 
 ### `parse_boundary_response(response_text: str, page_count: int) -> list[list[int]]`
 LLM 응답을 JSON 파싱하여 페이지 그룹을 반환한다. 마크다운 코드 펜스 처리를 지원하며, 유효하지 않은 응답 시 폴백한다.
@@ -26,7 +26,7 @@ LLM 응답을 JSON 파싱하여 페이지 그룹을 반환한다. 마크다운 �
 ## LLM 모델
 
 - **Gemini 3.1 Pro Preview** (`gemini-3.1-pro-preview`)
-- genai 클라이언트: `config.get_genai_client()` (싱글턴, timeout=1800)
+- genai 클라이언트: `config.get_genai_client()` (싱글턴, timeout=180_000ms = 180초)
 
 ## 폴백 동작
 
