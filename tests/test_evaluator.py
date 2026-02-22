@@ -7,6 +7,7 @@ import pytest
 
 from src.evaluator import (
     EVALUATION_PROMPT_TEMPLATE,
+    _EVALUATION_JSON_SCHEMA,
     build_evaluation_prompt,
     call_gemini,
     call_openai,
@@ -156,6 +157,21 @@ class TestCallGemini:
 
         mock_get_client.assert_called_once()
 
+    @patch("src.evaluator.config.get_genai_client")
+    def test_uses_json_response_mode(self, mock_get_client: MagicMock) -> None:
+        """response_mime_type='application/json'으로 JSON 응답을 강제한다."""
+        mock_client = MagicMock()
+        mock_get_client.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.text = VALID_RESPONSE_JSON
+        mock_client.models.generate_content.return_value = mock_response
+
+        call_gemini("prompt")
+
+        call_kwargs = mock_client.models.generate_content.call_args
+        cfg = call_kwargs.kwargs["config"]
+        assert cfg.response_mime_type == "application/json"
+
 
 class TestCallGeminiEmptyResponse:
     """call_gemini 빈 응답 처리 테스트."""
@@ -258,6 +274,22 @@ class TestCallOpenai:
         mock_openai.OpenAI.assert_called_once_with(
             api_key="test-key-o", timeout=180.0
         )
+
+    @patch("src.evaluator.openai")
+    def test_uses_json_response_format(self, mock_openai: MagicMock) -> None:
+        """response_format으로 JSON 응답을 강제한다."""
+        mock_client = MagicMock()
+        mock_openai.OpenAI.return_value = mock_client
+        mock_choice = MagicMock()
+        mock_choice.message.content = VALID_RESPONSE_JSON
+        mock_response = MagicMock()
+        mock_response.choices = [mock_choice]
+        mock_client.chat.completions.create.return_value = mock_response
+
+        call_openai("prompt")
+
+        call_kwargs = mock_client.chat.completions.create.call_args
+        assert call_kwargs.kwargs["response_format"] == {"type": "json_object"}
 
 
 class TestCallOpenaiEmptyResponse:
@@ -382,6 +414,26 @@ class TestCallAnthropic:
         mock_anthropic.Anthropic.assert_called_once_with(
             api_key="test-key-a", timeout=180.0
         )
+
+    @patch("src.evaluator.anthropic")
+    def test_uses_json_schema_output_config(
+        self, mock_anthropic: MagicMock
+    ) -> None:
+        """output_config으로 JSON 스키마 응답을 강제한다."""
+        mock_client = MagicMock()
+        mock_anthropic.Anthropic.return_value = mock_client
+        mock_content_block = MagicMock()
+        mock_content_block.text = VALID_RESPONSE_JSON
+        mock_response = MagicMock()
+        mock_response.content = [mock_content_block]
+        mock_client.messages.create.return_value = mock_response
+
+        call_anthropic("prompt")
+
+        call_kwargs = mock_client.messages.create.call_args
+        output_config = call_kwargs.kwargs["output_config"]
+        assert output_config["format"]["type"] == "json_schema"
+        assert output_config["format"]["schema"] == _EVALUATION_JSON_SCHEMA
 
 
 class TestCallAnthropicEmptyResponse:

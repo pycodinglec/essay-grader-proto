@@ -17,32 +17,35 @@ evaluator 모듈 단위 테스트.
 - 에세이 `<content>` 태그 감싸기 확인
 - `EVALUATION_PROMPT_TEMPLATE` 기반 생성 확인
 
-### `TestCallGemini` (4개 테스트)
+### `TestCallGemini` (5개 테스트)
 - `gemini-3-flash-preview` 모델명 사용 확인
 - 프롬프트를 contents 파라미터로 전달 확인
 - API 응답 텍스트 반환 확인
 - `config.get_genai_client` 싱글턴 사용 확인
+- `response_mime_type="application/json"` JSON 모드 사용 확인
 
 ### `TestCallGeminiEmptyResponse` (2개 테스트)
 - 빈 텍스트 응답 시 ValueError 발생 확인
 - None 텍스트 응답 시 ValueError 발생 확인
 
-### `TestCallOpenai` (4개 테스트)
+### `TestCallOpenai` (5개 테스트)
 - `gpt-5.2` 모델명 사용 확인
 - user 메시지로 프롬프트 전달 확인
 - API 응답 content 반환 확인
 - `config.OPENAI_API_KEY` 및 timeout=180.0 사용 확인
+- `response_format={"type": "json_object"}` JSON 모드 사용 확인
 
 ### `TestCallOpenaiEmptyResponse` (2개 테스트)
 - 빈 choices 응답 시 ValueError 발생 확인
 - None content 응답 시 ValueError 발생 확인
 
-### `TestCallAnthropic` (5개 테스트)
+### `TestCallAnthropic` (6개 테스트)
 - `claude-sonnet-4-6` 모델명 사용 확인
 - user 메시지로 프롬프트 전달 확인
 - `max_tokens=4096` 설정 확인
 - API 응답 텍스트 반환 확인
 - `config.ANTHROPIC_API_KEY` 및 timeout=180.0 사용 확인
+- `output_config` JSON 스키마 모드 사용 확인
 
 ### `TestCallAnthropicEmptyResponse` (1개 테스트)
 - 빈 content 응답 시 ValueError 발생 확인
@@ -78,4 +81,4 @@ evaluator 모듈 단위 테스트.
 - `test_calls_build_evaluation_prompt`: 동일 프롬프트를 3개 LLM에 전달 확인
 - 모든 테스트에서 `call_gemini`, `call_openai`, `call_anthropic`를 mock 처리
 
-## 총 테스트 수: 50개
+## 총 테스트 수: 53개

@@ -10,6 +10,10 @@
 
 ## 상수
 
+### `_EVALUATION_JSON_SCHEMA`
+- Anthropic `output_config`에 전달하는 JSON 스키마 (Anthropic API는 스키마를 필수로 요구)
+- 구조: `{"scores": [{"번호": int, "점수": number}], "feedback": str}`
+
 ### `EVALUATION_PROMPT_TEMPLATE`
 - 3개 LLM에 전송하는 공통 프롬프트 템플릿
 - prompt injection 방어 문구가 앞에 포함됨
@@ -24,6 +28,7 @@
 ### `call_gemini(prompt: str) -> str`
 - `config.get_genai_client()` 싱글턴을 사용하여 Gemini 3 Flash API 호출
 - 모델명: `gemini-3-flash-preview`
+- JSON 강제: `config=GenerateContentConfig(response_mime_type="application/json")`
 - 빈 응답(`.text`가 빈 문자열 또는 None)일 경우 `ValueError` 발생
 - 응답의 `.text` 반환
 
@@ -31,6 +36,7 @@
 - openai SDK를 사용하여 GPT 5.2 API 호출
 - `config.OPENAI_API_KEY` 사용, `timeout=180.0` 설정 (3분)
 - 모델명: `gpt-5.2`
+- JSON 강제: `response_format={"type": "json_object"}`
 - 빈 choices 또는 빈 content일 경우 `ValueError` 발생
 - user 메시지로 프롬프트를 전달하고 `.choices[0].message.content` 반환
 
@@ -38,6 +44,7 @@
 - anthropic SDK를 사용하여 Sonnet 4.6 API 호출
 - `config.ANTHROPIC_API_KEY` 사용, `timeout=180.0` 설정 (3분)
 - 모델명: `claude-sonnet-4-6`, `max_tokens=4096`
+- JSON 강제: `output_config={"format": {"type": "json_schema", "schema": _EVALUATION_JSON_SCHEMA}}`
 - 빈 content일 경우 `ValueError` 발생
 - user 메시지로 프롬프트를 전달하고 `.content[0].text` 반환
 
