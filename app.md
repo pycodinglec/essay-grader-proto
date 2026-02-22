@@ -33,6 +33,9 @@ Streamlit 웹 애플리케이션 진입점. 서논술형 에세이 자동 채점
 ### `SPLITTER_PROMPT_DESCRIPTION`
 에세이 분할 프롬프트의 구조를 설명하는 텍스트. 프롬프트 공개 섹션에서 표시된다.
 
+### `_RUBRIC_TEMPLATE_PATH`
+채점기준표 템플릿 xlsx 파일 경로 (`src/채점기준표_템플릿.xlsx`). `show_rubric_section()`에서 다운로드 버튼에 사용.
+
 ## 함수 목록
 
 ### 비즈니스 로직 (테스트 가능)

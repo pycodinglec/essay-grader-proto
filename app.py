@@ -5,10 +5,13 @@ Streamlit 기반 UI로, 에세이 업로드 -> OCR -> 제출물 식별 ->
 """
 
 from collections.abc import Callable
+from pathlib import Path
 
 import streamlit as st
 
 from src import auth, config, essay_splitter, evaluator, file_handler, ocr, report, rubric, submission
+
+_RUBRIC_TEMPLATE_PATH = Path(__file__).parent / "src" / "채점기준표_템플릿.xlsx"
 
 st.set_page_config(page_title="에세이 자동 채점", layout="wide")
 
@@ -275,6 +278,14 @@ def _validate_and_parse_rubric(rubric_file) -> None:
 def show_rubric_section() -> None:
     """채점기준표 업로드 및 검증 UI를 표시한다."""
     st.subheader("1. 채점기준표 업로드")
+    st.download_button(
+        label="채점기준표 템플릿 다운로드",
+        data=_RUBRIC_TEMPLATE_PATH.read_bytes(),
+        file_name="채점기준표_템플릿.xlsx",
+        mime="application/vnd.openxmlformats-officedocument"
+        ".spreadsheetml.sheet",
+        key="download_rubric_template",
+    )
     rubric_file = st.file_uploader(
         "채점기준표 xlsx 파일을 업로드하세요",
         type=["xlsx"],
