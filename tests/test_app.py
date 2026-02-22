@@ -146,6 +146,42 @@ class TestRunOcrAndIdentify:
 
         mock_sub.build_submissions.assert_called_once_with(split_output)
 
+    @patch("app.essay_splitter")
+    @patch("app.submission")
+    @patch("app.ocr")
+    def test_on_progress_callback_called_per_file(self, mock_ocr, mock_sub, mock_splitter):
+        """on_progress 콜백이 파일별로 OCR 시작 전 호출된다."""
+        from app import run_ocr_and_identify
+
+        mock_ocr.ocr_file.side_effect = [
+            [{"학번": "10301", "이름": "홍길동", "에세이텍스트": "내용1"}],
+            [{"학번": "10302", "이름": "김영희", "에세이텍스트": "내용2"}],
+        ]
+        mock_splitter.split_essays.side_effect = lambda x: x
+        mock_sub.build_submissions.return_value = ([], [])
+
+        calls = []
+        run_ocr_and_identify(
+            [("a.png", b"a"), ("b.png", b"b")],
+            on_progress=lambda cur, tot: calls.append((cur, tot)),
+        )
+
+        assert calls == [(1, 2), (2, 2)]
+
+    @patch("app.essay_splitter")
+    @patch("app.submission")
+    @patch("app.ocr")
+    def test_on_progress_none_is_safe(self, mock_ocr, mock_sub, mock_splitter):
+        """on_progress=None이면 콜백 없이 정상 동작한다."""
+        from app import run_ocr_and_identify
+
+        mock_ocr.ocr_file.return_value = [{"학번": "", "이름": "", "에세이텍스트": "t"}]
+        mock_splitter.split_essays.side_effect = lambda x: x
+        mock_sub.build_submissions.return_value = ([], [])
+
+        subs, unid = run_ocr_and_identify([("a.png", b"a")], on_progress=None)
+        assert subs == []
+
 
 # ---------------------------------------------------------------------------
 # run_grading 테스트
@@ -456,6 +492,36 @@ class TestProgressMessage:
 
         msg = format_progress_message(total=3, current=3)
         assert msg == "3개의 제출물 중 3번째 문서를 채점중..."
+
+
+# ---------------------------------------------------------------------------
+# format_ocr_progress_message 테스트
+# ---------------------------------------------------------------------------
+
+
+class TestFormatOcrProgressMessage:
+    """OCR 진행률 메시지 포맷 테스트."""
+
+    def test_format_ocr_progress_message(self):
+        """OCR 진행률 메시지가 올바른 형식으로 생성된다."""
+        from app import format_ocr_progress_message
+
+        msg = format_ocr_progress_message(total=5, current=2)
+        assert msg == "5개 파일 중 2번째 파일 OCR 중..."
+
+    def test_format_ocr_progress_message_first(self):
+        """첫 번째 파일의 OCR 진행률 메시지."""
+        from app import format_ocr_progress_message
+
+        msg = format_ocr_progress_message(total=3, current=1)
+        assert msg == "3개 파일 중 1번째 파일 OCR 중..."
+
+    def test_format_ocr_progress_message_last(self):
+        """마지막 파일의 OCR 진행률 메시지."""
+        from app import format_ocr_progress_message
+
+        msg = format_ocr_progress_message(total=3, current=3)
+        assert msg == "3개 파일 중 3번째 파일 OCR 중..."
 
 
 # ---------------------------------------------------------------------------

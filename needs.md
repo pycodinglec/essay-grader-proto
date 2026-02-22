@@ -17,3 +17,4 @@
 설계 변경 이력 (design_qa_01.md, ocr_prompt_design.md 참조):
 - 사용자 임의 중단 버튼: 제거됨. 사용자가 업로드 분량을 스스로 조절.
 - OCR 프롬프트: raw text → 구조화 JSON(학번/이름/에세이텍스트) 출력 방식으로 변경.
+- 파이프라인 순서 변경 (pipeline_reorder_design.md 참조): 채점기준표 업로드가 Step 1로 이동. OCR 버튼 제거 → 파일 처리 버튼 클릭 시 자동 OCR 실행 + 진행률 바 표시.

@@ -64,6 +64,19 @@ def format_progress_message(total: int, current: int) -> str:
     return f"{total}개의 제출물 중 {current}번째 문서를 채점중..."
 
 
+def format_ocr_progress_message(total: int, current: int) -> str:
+    """OCR 진행률 메시지를 생성한다.
+
+    Args:
+        total: 전체 파일 수.
+        current: 현재 OCR 중인 파일 번호 (1-based).
+
+    Returns:
+        "N개 파일 중 K번째 파일 OCR 중..." 형식 문자열.
+    """
+    return f"{total}개 파일 중 {current}번째 파일 OCR 중..."
+
+
 def build_error_message(k: int) -> str:
     """채점 중 에러 발생 시 표시할 한국어 메시지를 생성한다.
 
@@ -82,17 +95,22 @@ def build_error_message(k: int) -> str:
 
 def run_ocr_and_identify(
     files_data: list[tuple[str, bytes]],
+    on_progress: Callable[[int, int], None] | None = None,
 ) -> tuple[list[dict], list[str]]:
     """파일 목록에 대해 OCR을 수행하고 제출물을 식별한다.
 
     Args:
         files_data: (파일명, 바이트) 튜플 리스트.
+        on_progress: 각 파일 OCR 시작 전 호출되는 콜백(current, total).
 
     Returns:
         (식별된_제출물_리스트, 미식별_파일명_리스트) 튜플.
     """
     file_ocr_results: list[tuple[str, list[dict]]] = []
-    for filename, file_bytes in files_data:
+    total = len(files_data)
+    for i, (filename, file_bytes) in enumerate(files_data, start=1):
+        if on_progress is not None:
+            on_progress(i, total)
         ocr_results = ocr.ocr_file(filename, file_bytes)
         file_ocr_results.append((filename, ocr_results))
     split_results = essay_splitter.split_essays(file_ocr_results)
@@ -177,7 +195,7 @@ def _process_essay_uploads(uploaded_files) -> list[tuple[str, bytes]]:
 
 def show_upload_section() -> None:
     """에세이 파일 업로드 UI를 표시한다."""
-    st.subheader("1. 에세이 파일 업로드")
+    st.subheader("2. 에세이 파일 업로드")
     uploaded_files = st.file_uploader(
         "에세이 파일을 업로드하세요 (PDF/이미지/ZIP)",
         type=["pdf", "png", "jpg", "jpeg", "zip"],
@@ -189,17 +207,27 @@ def show_upload_section() -> None:
         all_files = _process_essay_uploads(uploaded_files)
         if all_files:
             st.session_state.uploaded_files_data = all_files
+            st.session_state.submissions = []
+            st.session_state.unidentified = []
             st.success(f"{len(all_files)}개의 파일이 처리되었습니다.")
+            _run_ocr_with_progress()
 
 
-def _run_ocr_with_spinner() -> None:
-    """OCR 및 제출물 식별을 스피너와 함께 실행한다."""
-    with st.spinner("OCR 및 제출물 식별 중..."):
-        subs, unid = run_ocr_and_identify(
-            st.session_state.uploaded_files_data
-        )
+def _run_ocr_with_progress() -> None:
+    """OCR 및 제출물 식별을 진행률 바와 함께 실행한다."""
+    files_data = st.session_state.uploaded_files_data
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+
+    def _on_progress(current: int, total: int) -> None:
+        status_text.text(format_ocr_progress_message(total, current))
+        progress_bar.progress((current - 1) / total if total > 0 else 0)
+
+    subs, unid = run_ocr_and_identify(files_data, on_progress=_on_progress)
     st.session_state.submissions = subs
     st.session_state.unidentified = unid
+    progress_bar.progress(1.0)
+    status_text.text("OCR 완료!")
 
 
 def show_identification_results(
@@ -211,7 +239,7 @@ def show_identification_results(
         submissions_list: 식별된 제출물 dict 리스트.
         unidentified: 미식별 파일명 리스트.
     """
-    st.subheader("2. 제출물 식별 결과")
+    st.subheader("3. 제출물 식별 결과")
 
     if submissions_list:
         display_text = submission.format_submissions_for_display(
@@ -246,7 +274,7 @@ def _validate_and_parse_rubric(rubric_file) -> None:
 
 def show_rubric_section() -> None:
     """채점기준표 업로드 및 검증 UI를 표시한다."""
-    st.subheader("3. 채점기준표 업로드")
+    st.subheader("1. 채점기준표 업로드")
     rubric_file = st.file_uploader(
         "채점기준표 xlsx 파일을 업로드하세요",
         type=["xlsx"],
@@ -340,20 +368,16 @@ def main() -> None:
 
     show_prompts_section()
 
-    show_upload_section()
+    show_rubric_section()
 
-    if st.session_state.uploaded_files_data and not st.session_state.submissions:
-        if st.button("OCR 및 제출물 식별 시작", key="start_ocr"):
-            _run_ocr_with_spinner()
+    if st.session_state.rubric_data:
+        show_upload_section()
 
     if st.session_state.submissions:
         show_identification_results(
             st.session_state.submissions,
             st.session_state.unidentified,
         )
-
-    if st.session_state.submissions:
-        show_rubric_section()
 
     if st.session_state.rubric_data and st.session_state.submissions:
         show_grading_section()
