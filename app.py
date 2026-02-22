@@ -206,7 +206,7 @@ def show_upload_section() -> None:
         key="essay_uploader",
     )
 
-    if uploaded_files and st.button("에세이 파일 처리", key="process_essays"):
+    if uploaded_files:
         all_files = _process_essay_uploads(uploaded_files)
         if all_files:
             st.session_state.uploaded_files_data = all_files
@@ -292,7 +292,7 @@ def show_rubric_section() -> None:
         key="rubric_uploader",
     )
 
-    if rubric_file and st.button("채점기준표 확인", key="validate_rubric"):
+    if rubric_file:
         _validate_and_parse_rubric(rubric_file)
 
     if st.session_state.rubric_data:
