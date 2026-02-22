@@ -36,7 +36,7 @@ Streamlit 웹 애플리케이션 진입점. 서논술형 에세이 자동 채점
 - `init_session_state()` -- 세션 상태 키를 기본값으로 초기화
 - `format_progress_message(total, current)` -- "n개의 제출물 중 k번째 문서를 채점중..." 형식 메시지 생성
 - `build_error_message(k)` -- 채점 에러 시 한국어 안내 메시지 생성
-- `run_ocr_and_identify(files_data)` -- 파일 목록 OCR 수행 후 `submission.build_submissions` 호출, (submissions, unidentified) 반환
+- `run_ocr_and_identify(files_data)` -- 파일 목록 OCR 수행 후 `essay_splitter.split_essays`로 에세이 분리, `submission.build_submissions` 호출, (submissions, unidentified) 반환
 - `run_grading(submissions, rubric_text)` -- 제출물별 3-LLM 평가, 에러 시 부분 결과 보존, (graded, report_bytes, error_msg) 반환
 
 ### UI 렌더링 (Streamlit 의존)
@@ -70,4 +70,9 @@ Streamlit 웹 애플리케이션 진입점. 서논술형 에세이 자동 채점
 
 ## 의존 모듈
 
-`src.auth`, `src.config`, `src.evaluator`, `src.file_handler`, `src.ocr`, `src.report`, `src.rubric`, `src.submission`
+`src.auth`, `src.config`, `src.essay_splitter`, `src.evaluator`, `src.file_handler`, `src.ocr`, `src.report`, `src.rubric`, `src.submission`
+
+## 파이프라인 변경 사항
+
+OCR 결과를 바로 `build_submissions`에 전달하지 않고, `essay_splitter.split_essays`를 거쳐 에세이를 분리한 후 전달한다:
+OCR -> `essay_splitter.split_essays` -> `submission.build_submissions`

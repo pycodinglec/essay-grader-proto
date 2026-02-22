@@ -6,7 +6,7 @@ Streamlit 기반 UI로, 에세이 업로드 -> OCR -> 제출물 식별 ->
 
 import streamlit as st
 
-from src import auth, config, evaluator, file_handler, ocr, report, rubric, submission
+from src import auth, config, essay_splitter, evaluator, file_handler, ocr, report, rubric, submission
 
 st.set_page_config(page_title="에세이 자동 채점", layout="wide")
 
@@ -73,7 +73,8 @@ def run_ocr_and_identify(
     for filename, file_bytes in files_data:
         ocr_results = ocr.ocr_file(filename, file_bytes)
         file_ocr_results.append((filename, ocr_results))
-    return submission.build_submissions(file_ocr_results)
+    split_results = essay_splitter.split_essays(file_ocr_results)
+    return submission.build_submissions(split_results)
 
 
 def run_grading(

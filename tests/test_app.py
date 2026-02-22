@@ -17,9 +17,10 @@ import pytest
 class TestRunOcrAndIdentify:
     """run_ocr_and_identify 함수 테스트."""
 
+    @patch("app.essay_splitter")
     @patch("app.submission")
     @patch("app.ocr")
-    def test_returns_submissions_and_unidentified(self, mock_ocr, mock_sub):
+    def test_returns_submissions_and_unidentified(self, mock_ocr, mock_sub, mock_splitter):
         """OCR 결과를 기반으로 제출물과 미식별 파일을 반환한다."""
         from app import run_ocr_and_identify
 
@@ -27,6 +28,7 @@ class TestRunOcrAndIdentify:
             [{"학번": "10301", "이름": "홍길동", "에세이텍스트": "에세이 내용"}],
             [{"학번": "", "이름": "", "에세이텍스트": "식별불가 텍스트"}],
         ]
+        mock_splitter.split_essays.side_effect = lambda x: x
         expected_subs = [{"학번": "10301", "이름": "홍길동", "에세이텍스트": "에세이 내용"}]
         expected_unid = ["unknown.png"]
         mock_sub.build_submissions.return_value = (expected_subs, expected_unid)
@@ -43,10 +45,11 @@ class TestRunOcrAndIdentify:
         assert mock_ocr.ocr_file.call_count == 2
         mock_sub.build_submissions.assert_called_once()
 
+    @patch("app.essay_splitter")
     @patch("app.submission")
     @patch("app.ocr")
-    def test_builds_correct_file_ocr_results_structure(self, mock_ocr, mock_sub):
-        """ocr_file 결과를 (filename, [dict,...]) 형태로 build_submissions에 전달한다."""
+    def test_builds_correct_file_ocr_results_structure(self, mock_ocr, mock_sub, mock_splitter):
+        """ocr_file 결과를 (filename, [dict,...]) 형태로 essay_splitter에 전달한다."""
         from app import run_ocr_and_identify
 
         page1 = {"학번": "10305", "이름": "홍길동", "에세이텍스트": "페이지1"}
@@ -54,6 +57,7 @@ class TestRunOcrAndIdentify:
         mock_ocr.ocr_file.side_effect = [
             [page1, page2],
         ]
+        mock_splitter.split_essays.side_effect = lambda x: x
         mock_sub.build_submissions.return_value = ([], [])
 
         run_ocr_and_identify([("doc.pdf", b"fake_pdf")])
@@ -63,12 +67,14 @@ class TestRunOcrAndIdentify:
         assert call_args[0][0] == "doc.pdf"
         assert call_args[0][1] == [page1, page2]
 
+    @patch("app.essay_splitter")
     @patch("app.submission")
     @patch("app.ocr")
-    def test_empty_file_list(self, mock_ocr, mock_sub):
+    def test_empty_file_list(self, mock_ocr, mock_sub, mock_splitter):
         """빈 파일 리스트 입력 시 빈 결과를 반환한다."""
         from app import run_ocr_and_identify
 
+        mock_splitter.split_essays.side_effect = lambda x: x
         mock_sub.build_submissions.return_value = ([], [])
 
         subs, unid = run_ocr_and_identify([])
@@ -77,9 +83,10 @@ class TestRunOcrAndIdentify:
         assert unid == []
         mock_ocr.ocr_file.assert_not_called()
 
+    @patch("app.essay_splitter")
     @patch("app.submission")
     @patch("app.ocr")
-    def test_multiple_files_ocr_called_for_each(self, mock_ocr, mock_sub):
+    def test_multiple_files_ocr_called_for_each(self, mock_ocr, mock_sub, mock_splitter):
         """여러 파일에 대해 각각 ocr_file을 호출한다."""
         from app import run_ocr_and_identify
 
@@ -88,6 +95,7 @@ class TestRunOcrAndIdentify:
             [{"학번": "", "이름": "", "에세이텍스트": "t2"}],
             [{"학번": "", "이름": "", "에세이텍스트": "t3"}],
         ]
+        mock_splitter.split_essays.side_effect = lambda x: x
         mock_sub.build_submissions.return_value = ([], [])
 
         files = [
@@ -100,6 +108,43 @@ class TestRunOcrAndIdentify:
         assert mock_ocr.ocr_file.call_count == 3
         call_args_list = mock_sub.build_submissions.call_args[0][0]
         assert len(call_args_list) == 3
+
+    @patch("app.submission")
+    @patch("app.essay_splitter")
+    @patch("app.ocr")
+    def test_calls_essay_splitter_before_build_submissions(self, mock_ocr, mock_splitter, mock_sub):
+        """OCR 결과를 essay_splitter.split_essays에 전달한다."""
+        from app import run_ocr_and_identify
+
+        page = {"학번": "10301", "이름": "홍길동", "에세이텍스트": "내용"}
+        mock_ocr.ocr_file.return_value = [page]
+        mock_splitter.split_essays.return_value = [("essay1.png", [page])]
+        mock_sub.build_submissions.return_value = ([{"학번": "10301"}], [])
+
+        run_ocr_and_identify([("essay1.png", b"fake")])
+
+        mock_splitter.split_essays.assert_called_once()
+        call_args = mock_splitter.split_essays.call_args[0][0]
+        assert len(call_args) == 1
+        assert call_args[0][0] == "essay1.png"
+
+    @patch("app.submission")
+    @patch("app.essay_splitter")
+    @patch("app.ocr")
+    def test_passes_split_results_to_build_submissions(self, mock_ocr, mock_splitter, mock_sub):
+        """essay_splitter 결과가 build_submissions에 전달된다."""
+        from app import run_ocr_and_identify
+
+        page1 = {"학번": "10301", "이름": "홍길동", "에세이텍스트": "내용1"}
+        page2 = {"학번": "10302", "이름": "김영희", "에세이텍스트": "내용2"}
+        mock_ocr.ocr_file.return_value = [page1, page2]
+        split_output = [("scan.pdf#1", [page1]), ("scan.pdf#2", [page2])]
+        mock_splitter.split_essays.return_value = split_output
+        mock_sub.build_submissions.return_value = ([], [])
+
+        run_ocr_and_identify([("scan.pdf", b"fake")])
+
+        mock_sub.build_submissions.assert_called_once_with(split_output)
 
 
 # ---------------------------------------------------------------------------
