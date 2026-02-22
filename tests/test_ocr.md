@@ -22,7 +22,7 @@
 
 | 테스트 | 설명 |
 |--------|------|
-| `test_calls_generate_content_with_correct_model` | 올바른 모델 이름(gemini-3-pro-image)으로 generate_content를 호출하는지 확인 |
+| `test_calls_generate_content_with_correct_model` | 올바른 모델 이름(gemini-3.1-pro-preview)으로 generate_content를 호출하는지 확인 |
 | `test_sends_image_and_prompt_as_contents` | contents에 이미지와 OCR 프롬프트가 함께 전달되는지 확인 |
 | `test_returns_parsed_dict` | API 응답을 파싱하여 dict(학번/이름/에세이텍스트)를 반환하는지 확인 |
 | `test_returns_fallback_dict_on_invalid_response` | 유효하지 않은 응답에서 폴백 dict를 반환하는지 확인 |

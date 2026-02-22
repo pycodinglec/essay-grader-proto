@@ -1,7 +1,7 @@
 """OCR 모듈 (Google Nano Banana Pro API).
 
 이미지에서 학생 정보(학번, 이름)와 에세이 텍스트를 구조화하여 추출하기 위해
-Google Nano Banana Pro(gemini-3-pro-image) API를 사용한다.
+Google Nano Banana Pro(gemini-3.1-pro-preview) API를 사용한다.
 PDF는 이미지로 변환 후 OCR을 수행한다.
 """
 
@@ -36,7 +36,7 @@ OCR_PROMPT = (
     '{"학번": "학번값", "이름": "이름값", "에세이텍스트": "에세이 본문"}'
 )
 
-MODEL_NAME = "gemini-3-pro-image"
+MODEL_NAME = "gemini-3.1-pro-preview"
 
 _REQUIRED_KEYS = {"학번", "이름", "에세이텍스트"}
 
@@ -84,7 +84,7 @@ def parse_ocr_response(response_text: str) -> dict:
 def extract_text_from_image(image: Image.Image) -> dict:
     """단일 PIL Image에서 학생 정보와 에세이 텍스트를 추출한다.
 
-    Google Nano Banana Pro API(gemini-3-pro-image)를 사용하여
+    Google Nano Banana Pro API(gemini-3.1-pro-preview)를 사용하여
     이미지 내 학번, 이름, 에세이 본문을 구조화하여 추출한다.
 
     Args:

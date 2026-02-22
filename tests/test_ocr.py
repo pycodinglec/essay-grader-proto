@@ -14,7 +14,7 @@ from src.ocr import (
     parse_ocr_response,
 )
 
-MODEL_NAME = "gemini-3-pro-image"
+MODEL_NAME = "gemini-3.1-pro-preview"
 
 
 # ---------------------------------------------------------------------------

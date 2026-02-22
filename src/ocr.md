@@ -3,7 +3,7 @@
 OCR 모듈 (Google Nano Banana Pro API).
 
 ## 역할
-- Google Nano Banana Pro API(gemini-3-pro-image)를 사용한 이미지 OCR
+- Google Nano Banana Pro API(gemini-3.1-pro-preview)를 사용한 이미지 OCR
 - 학번, 이름, 에세이텍스트를 구조화된 JSON으로 추출
 - PDF 파일의 이미지 변환 후 OCR 처리
 - 이미지 파일(png/jpg/jpeg) 직접 OCR 처리
@@ -11,7 +11,7 @@ OCR 모듈 (Google Nano Banana Pro API).
 ## 상수
 
 - `OCR_PROMPT`: OCR 요청에 사용되는 한국어 프롬프트. prompt injection 방어 문구가 앞에 포함되며, 이미지에서 학번, 이름, 에세이 본문을 분리하여 JSON으로 반환하도록 지시한다. 인쇄된 지시문과 손 글씨 에세이를 구분하며, 악필 시 무리한 추측을 하지 않도록 안내한다.
-- `MODEL_NAME`: `"gemini-3-pro-image"` — Google Nano Banana Pro API의 모델 식별자.
+- `MODEL_NAME`: `"gemini-3.1-pro-preview"` — Google Nano Banana Pro API의 모델 식별자.
 - `_REQUIRED_KEYS`: `{"학번", "이름", "에세이텍스트"}` — OCR 응답에 필수인 JSON 키.
 - `_CODE_FENCE_RE`: 마크다운 코드 펜스(```json ... ```)를 매칭하는 정규식.
 
