@@ -21,7 +21,7 @@
 
 ### `get_genai_client() -> genai.Client`
 - Google genai.Client 싱글턴을 반환한다.
-- 최초 호출 시 lazy 초기화: `genai.Client(api_key=GOOGLE_API_KEY, http_options=HttpOptions(timeout=1800))`
+- 최초 호출 시 lazy 초기화: `genai.Client(api_key=GOOGLE_API_KEY, http_options=HttpOptions(timeout=1_800_000))` (밀리초 단위, 1800초)
 - 이후 호출에서는 동일 인스턴스를 재사용한다.
 - `src.ocr`, `src.evaluator`, `src.essay_splitter`에서 공통으로 사용한다.
 
