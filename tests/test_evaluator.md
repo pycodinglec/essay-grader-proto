@@ -47,10 +47,12 @@ evaluator 모듈 단위 테스트.
 ### `TestCallAnthropicEmptyResponse` (1개 테스트)
 - 빈 content 응답 시 ValueError 발생 확인
 
-### `TestParseEvaluationResponse` (11개 테스트)
+### `TestParseEvaluationResponse` (13개 테스트)
 - 유효한 JSON 파싱
 - 마크다운 코드 펜스(```json) 내 JSON 파싱
 - 일반 코드 펜스(```) 내 JSON 파싱
+- JSON 앞에 설명 텍스트가 있는 경우 파싱
+- JSON 뒤에 설명 텍스트가 있는 경우 파싱
 - 유효하지 않은 JSON → `None` 반환
 - `scores` 키 누락 → `None` 반환
 - `feedback` 키 누락 → `None` 반환
@@ -76,4 +78,4 @@ evaluator 모듈 단위 테스트.
 - `test_calls_build_evaluation_prompt`: 동일 프롬프트를 3개 LLM에 전달 확인
 - 모든 테스트에서 `call_gemini`, `call_openai`, `call_anthropic`를 mock 처리
 
-## 총 테스트 수: 48개
+## 총 테스트 수: 50개

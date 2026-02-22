@@ -60,13 +60,13 @@
 ## 내부 함수
 
 ### `_extract_json_string(text: str) -> str`
-- 응답 텍스트에서 마크다운 코드 펜스를 제거하고 순수 JSON 문자열을 추출
+- 응답 텍스트에서 JSON 문자열을 추출. 1순위: 마크다운 코드 펜스 내부, 2순위: 첫 `{`부터 마지막 `}`까지, 3순위: 원본 텍스트
 
 ### `_validate_evaluation_dict(data: dict) -> bool`
 - 파싱된 평가 결과의 구조를 검증 (`scores` 리스트, `feedback` 문자열, 각 항목의 `번호`/`점수`)
 
 ### `_collect_responses(prompt: str) -> list[tuple[str, str | None]]`
-- ThreadPoolExecutor(max_workers=3)로 3개 LLM을 병렬 호출하여 (이름, 응답텍스트) 목록 반환, 실패 시 `None` 기록
+- ThreadPoolExecutor(max_workers=3)로 3개 LLM을 병렬 호출하여 (이름, 응답텍스트) 목록 반환, 실패 시 `None` 기록 및 `logger.warning`으로 에러 로깅
 
 ## 타입 표기
 - `from __future__ import annotations` 사용

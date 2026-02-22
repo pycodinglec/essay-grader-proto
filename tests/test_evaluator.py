@@ -434,6 +434,25 @@ class TestParseEvaluationResponse:
         assert result is not None
         assert result["feedback"] == VALID_RESPONSE_DICT["feedback"]
 
+    def test_parses_json_with_prefix_text(self):
+        """JSON 앞에 설명 텍스트가 있어도 파싱한다."""
+        response = f"다음은 채점 결과입니다:\n{VALID_RESPONSE_JSON}"
+
+        result = parse_evaluation_response(response)
+
+        assert result is not None
+        assert result["scores"] == VALID_RESPONSE_DICT["scores"]
+        assert result["feedback"] == VALID_RESPONSE_DICT["feedback"]
+
+    def test_parses_json_with_suffix_text(self):
+        """JSON 뒤에 설명 텍스트가 있어도 파싱한다."""
+        response = f"{VALID_RESPONSE_JSON}\n\n이상입니다."
+
+        result = parse_evaluation_response(response)
+
+        assert result is not None
+        assert result["scores"] == VALID_RESPONSE_DICT["scores"]
+
     def test_returns_none_for_invalid_json(self):
         """유효하지 않은 JSON은 None을 반환한다."""
         result = parse_evaluation_response("이것은 JSON이 아닙니다")
