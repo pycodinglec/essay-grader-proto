@@ -45,6 +45,13 @@ Streamlit UI 렌더링은 직접 테스트하지 않는다. 대신 비즈니스 
 - `test_error_message_contains_index` -- 작업물 번호 포함 여부
 - `test_error_message_contains_required_phrases` -- 필수 안내 문구 포함 여부
 
+### TestShowPromptsSection (2개 테스트)
+
+프롬프트 공개 섹션을 테스트한다.
+
+- `test_function_exists` -- `show_prompts_section` 함수 존재 확인
+- `test_splitter_prompt_description_exists` -- `SPLITTER_PROMPT_DESCRIPTION` 상수 존재 확인
+
 ## 총 테스트 수
 
-17개 테스트
+21개 테스트

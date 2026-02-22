@@ -57,15 +57,13 @@ evaluator 모듈 단위 테스트.
 - 소수점 점수 합산
 - float 반환 타입 확인
 
-### `TestEvaluateEssay` (8개 테스트)
-- 최고점 응답 채택 확인
-- 1개 LLM 실패 시 나머지로 평가
-- 2개 LLM 실패 시 나머지 1개로 평가
-- 3개 LLM 모두 실패 시 `None` 반환
-- 모든 응답이 유효하지 않을 때 `None` 반환
-- `build_evaluation_prompt`로 생성된 동일 프롬프트를 3개 LLM에 전달 확인
-- 유효/무효 응답 혼재 시 유효한 응답만 채택
-- 동점 시에도 결과 반환 확인
+### `TestEvaluateEssay` (6개 테스트)
+- `test_returns_all_model_results`: 3개 모델 응답이 `by_model`에 모두 포함
+- `test_best_is_highest_score`: `best`가 최고점 응답
+- `test_failed_model_is_none_in_by_model`: 실패 모델은 `by_model`에 `None`
+- `test_invalid_response_is_none_in_by_model`: 파싱 실패 모델도 `by_model`에 `None`
+- `test_all_fail_returns_none`: 전체 실패 시 `None` 반환
+- `test_calls_build_evaluation_prompt`: 동일 프롬프트를 3개 LLM에 전달 확인
 - 모든 테스트에서 `call_gemini`, `call_openai`, `call_anthropic`를 mock 처리
 
-## 총 테스트 수: 43개
+## 총 테스트 수: 41개

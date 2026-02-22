@@ -29,6 +29,11 @@ Streamlit 웹 애플리케이션 진입점. 서논술형 에세이 자동 채점
 | `report_bytes` | bytes | 생성된 xlsx 바이트 |
 | `grading_error` | str \| None | 채점 중 에러 메시지 |
 
+## 상수
+
+### `SPLITTER_PROMPT_DESCRIPTION`
+에세이 분할 프롬프트의 구조를 설명하는 텍스트. 프롬프트 공개 섹션에서 표시된다.
+
 ## 함수 목록
 
 ### 비즈니스 로직 (테스트 가능)
@@ -41,6 +46,7 @@ Streamlit 웹 애플리케이션 진입점. 서논술형 에세이 자동 채점
 
 ### UI 렌더링 (Streamlit 의존)
 
+- `show_prompts_section()` -- 사용 중인 LLM 프롬프트를 expander로 표시 (OCR/에세이 분할/채점 프롬프트). 인증 직후 `main()`에서 호출
 - `show_login_page()` -- 패스워드 입력 및 인증 처리
 - `show_upload_section()` -- 에세이 파일 업로드 UI
 - `_process_essay_uploads(uploaded_files)` -- 업로드 파일 처리 헬퍼
@@ -56,10 +62,11 @@ Streamlit 웹 애플리케이션 진입점. 서논술형 에세이 자동 채점
 ## UI 흐름
 
 1. 미인증 -> `show_login_page()` 표시
-2. 인증 완료 -> 에세이 업로드 -> OCR 및 식별 -> 결과 표시
-3. 채점기준표 업로드 및 검증 -> 기준표 확인
-4. 채점 시작 -> 진행률 바 + 상태 메시지 표시
-5. 채점 완료 또는 에러 -> 다운로드 버튼 제공
+2. 인증 완료 -> 프롬프트 공개 (`show_prompts_section()`)
+3. 에세이 업로드 -> OCR 및 식별 -> 결과 표시
+4. 채점기준표 업로드 및 검증 -> 기준표 확인
+5. 채점 시작 -> 진행률 바 + 상태 메시지 표시
+6. 채점 완료 또는 에러 -> 다운로드 버튼 제공
 
 ## 에러 처리
 

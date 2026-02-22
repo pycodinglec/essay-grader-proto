@@ -50,8 +50,9 @@
 
 ### `evaluate_essay(essay_text: str, rubric_text: str) -> dict | None`
 - 프롬프트를 생성하고 3개 LLM을 순차 호출
-- 각 응답을 파싱하고 점수를 합산하여 최고점 응답을 채택
-- 개별 LLM 호출 실패 시 해당 응답만 무시하고 나머지로 평가 계속
+- 각 응답을 파싱하고 점수를 합산하여 최고점 응답을 `best`로 선택
+- 모든 모델의 결과를 `by_model`에 보존 (실패/파싱 실패 시 `None`)
+- 반환 구조: `{"best": {"scores": [...], "feedback": "..."}, "by_model": {"gemini": dict|None, "openai": dict|None, "anthropic": dict|None}}`
 - 모든 LLM이 실패하거나 유효한 응답이 없으면 `None` 반환
 
 ## 내부 함수
